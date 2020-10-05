@@ -1,0 +1,24 @@
+{
+  "name": "cotas_parlamentares_js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "anticaptcha": "^2.0.3",
+    "cheerio": "^1.0.0-rc.3",
+    "clipboardy": "^2.3.0",
+    "dotenv": "^8.2.0",
+    "jsdom": "^16.4.0",
+    "mongoose": "^5.10.7",
+    "puppeteer": "^5.3.1",
+    "puppeteer-extra": "^3.1.15",
+    "puppeteer-extra-plugin-stealth": "^2.6.2",
+    "xmldom": "^0.3.0",
+    "xpath": "0.0.29"
+  }
+}
