@@ -7,7 +7,15 @@ const getSingleData = async ($, searchInfo) => {
 
     if (searchInfo.selector){
         let tmp = $(searchInfo.selector)
-        res = tmp ? [tmp.text()] : ['']
+        if (tmp){
+            res = []
+            tmp.each(function(i, elm) {
+                res.push($(this).text())
+            })
+        }
+        else{
+            res = ['']
+        }
         delete selector_dom
     }
     else if (searchInfo.xpath){
@@ -44,8 +52,14 @@ const getSingleData = async ($, searchInfo) => {
     }
 
     if (searchInfo.func){
-        res = res.map(
-            searchInfo.func
+        res = res.reduce(
+            (acum, el) => {
+                let tmp_res = searchInfo.func(el);
+                return acum.concat(
+                    Array.isArray(tmp_res)?tmp_res:[tmp_res]
+                )
+            },
+            []  
         )
     }
 
@@ -76,7 +90,12 @@ const findInHtml = async (list_$, allSearchInfo) =>{
         $ = list_$[0]
     }
 
-    if (allSearchInfo['chave']){
+    if (allSearchInfo['__verifyFunc']){
+        if (! await allSearchInfo['__verifyFunc']($)){
+            return {}
+        }
+    }
+    else if (allSearchInfo['chave']){
         let chave = await getSingleData($, allSearchInfo['chave']);
         if ((chave.length == 0) || !chave[0]){
             return {}

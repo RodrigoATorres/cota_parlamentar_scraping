@@ -1,8 +1,8 @@
 module.exports = {
 
-    'http://nfe.sefaz.ba.gov.br':[
+    'http://www.nfce.se.gov.br':[
         {
-        // idDocumento ex.: 6992896,
+        //     // idDocumento ex.: 7004102,
             'chave':{
                 selector: '.chave',
                 func: x => x.replace(/\s/g, '')
@@ -40,44 +40,17 @@ module.exports = {
                 func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
             },          
            'customer_name':{
-                selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
+                selector: "li.ui-li-static:nth-child(2)",
                 re: /Nome:([A-Za-z,\s]+)/,
                 func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
 
             },     
            'customer_cpf':{
-                selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
+                selector: "div.ui-collapsible:nth-child(1) > div:nth-child(2) > ul:nth-child(1) > li:nth-child(1)",
                 re: /CPF: ([0-9,\.\-]+)/,
             },            
         },
 
-        {
-            '__verifyFunc':
-            async ($) =>{
-                return $.html().includes('HashCode inválido')
-            },
-            // idDocumento ex.: 7016921,
-            'chave':{
-                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-            },
-            'error':{
-                func: x=>'HashCode inválido'
-            }
-        },
-
-        {
-            '__verifyFunc':
-            async ($) =>{
-                return $.html().includes('CSC revogado')
-            },
-            // idDocumento ex.: 7016921,
-            'chave':{
-                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-            },
-            'error':{
-                func: x=>'CSC revogado'
-            }
-        }
     ],
 
 }

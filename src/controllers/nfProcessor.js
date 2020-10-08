@@ -1,26 +1,27 @@
+require('dotenv').config()
 const fs = require('fs');
 const cheerio = require('cheerio');
 
 const findInHtml = require('../helpers/htmlFindData').findInHtml;
 const keySearchInfo = require('../dataSearchInfo');
 
-let unregistred_domains = [];
+let unregistred_domains = {};
 
 const getNfData = async (fPath) =>{
 
     let html = fs.readFileSync(fPath, 'utf8').toString();
-    const list_$ = [cheerio.load(html)];
-    let idx = 0
+    const list_$ = [cheerio.load(html, { decodeEntities: false })];
+    let idx = 1
 
     while (fs.existsSync(fPath.replace('.html', `_frame${idx}.html`))) {
         html = fs.readFileSync(fPath.replace('.html', `_frame${idx}.html`), 'utf8').toString();
-        list_$.push(cheerio.load(html));
+        list_$.push(cheerio.load(html, { decodeEntities: false }));
         idx+=1;
     }
 
     let url = list_$[0]('#currentUrl').text()
     let domain = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0];
-    let data = null
+    let data = {}
 
     if (keySearchInfo[domain]){
         data = await findInHtml(list_$,keySearchInfo[domain])
@@ -34,31 +35,39 @@ const getNfData = async (fPath) =>{
         }
     }
     else{
-        if (!unregistred_domains.includes(domain)){
-            console.log(domain, url)
-            console.log(fPath)
-            unregistred_domains.push(domain)
+        if (domain == 'https://www4.sefaz.pb.gov.br'){
+            console.log(fPath, url)
         }
+        let domain_count = unregistred_domains[domain] || 0
+        unregistred_domains[domain] = domain_count + 1
     }
 
+    data = {...data, domain, url}
     return data
 }
 
 let files
 
-const getAllData = async () =>{
+var MongoClient = require('mongodb').MongoClient
+const MONGO_URL = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.DB_ADDRES}/${process.env.DB_NAME}?authSource=admin`;
+console.log(MONGO_URL)
+
+MongoClient
+  .connect(
+    MONGO_URL
+  )
+  .then( async(db) =>{
+    let dbObj = db.db('cota_parlamentar')
 
     files = fs.readdirSync('./unprocessedDocuments')
 
-    // files = ['6992896.html']
+    // files = ['6996139.html']
 
     for (let file of files){
         if (!file.includes('frame') && (file !='.gitignore')){
-            await getNfData(`./unprocessedDocuments/${file}`)
+            let data = await getNfData(`./unprocessedDocuments/${file}`)
+            await dbObj.collection('despesas').updateOne({idDocumento:Number(file.replace('.html',''))}, {$set:{dados:data}})
         }
     }
-    console.log([ ...new Set(unregistred_domains)])
-
-}
-
-getAllData()
+    console.log(unregistred_domains)
+})

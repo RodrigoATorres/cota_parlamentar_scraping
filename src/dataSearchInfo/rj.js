@@ -1,8 +1,8 @@
 module.exports = {
 
-    'http://nfe.sefaz.ba.gov.br':[
+    'http://www4.fazenda.rj.gov.br':[
         {
-        // idDocumento ex.: 6992896,
+        //     // idDocumento ex.: 6993551,
             'chave':{
                 selector: '.chave',
                 func: x => x.replace(/\s/g, '')
@@ -52,32 +52,15 @@ module.exports = {
         },
 
         {
-            '__verifyFunc':
-            async ($) =>{
-                return $.html().includes('HashCode inválido')
-            },
             // idDocumento ex.: 7016921,
             'chave':{
                 func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
             },
             'error':{
-                func: x=>'HashCode inválido'
-            }
-        },
-
-        {
-            '__verifyFunc':
-            async ($) =>{
-                return $.html().includes('CSC revogado')
-            },
-            // idDocumento ex.: 7016921,
-            'chave':{
-                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-            },
-            'error':{
-                func: x=>'CSC revogado'
+                func: x=>'Incomplete loading'
             }
         }
+
     ],
 
 }
