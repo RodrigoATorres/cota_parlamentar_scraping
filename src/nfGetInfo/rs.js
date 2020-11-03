@@ -9,7 +9,7 @@ module.exports = {
             confirmSelector: '#frmConsulta > button.btn.btn-primary',
             nTries: 3,
             posFunc: async (browser, page) => {
-                await page.waitFor(20 * 1000);
+                await page.waitFor(10 * 1000);
                 return page
             }
         }

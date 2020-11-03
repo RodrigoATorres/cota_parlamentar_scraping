@@ -1,69 +1,87 @@
 module.exports = {
 
-    'http://www.sefaz.to.gov.br':[
+    'http://sefaz.to.gov.br':[
         {
-            // idDocumento ex.: 6993301,
+        // 17200409217206000142650010001447831184484480,
             'chave':{
-                selector: '#j_id_19\\:j_id_2o\\:j_id_39 > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(2) > td:nth-child(2)',
+                selector: '#j_id_19\\:j_id_2o\\:j_id_39 > table > tbody > tr:nth-child(2) > td:nth-child(2)',
+                func: x => x.replace(/\s/g, '')
             },
             'estab_name':{
-                selector: '#j_id_19\\:j_id_1t_content > div:nth-child(1) > div:nth-child(1)',
+                selector: "#j_id_19\\:j_id_1u",
             },
             'estab_cnpj':{
                 selector: "#j_id_19\\:j_id_1v",
                 re: /([0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}\-[0-9]{2})/
             },
-            'n_items':{
-                selector: "#j_id_19\\:j_id_2h_content > div:nth-child(1) > div:nth-child(2)",
-            },
             'items_name':{
-                selector: "tr.ui-widget-content > td:nth-child(2)",
-                func: x=> x.replace("Descrição", '')
+                selector: "#j_id_19\\:j_id_1z_data > tr > td:nth-child(2)",
             },
             'items_qt':{
-                selector: "tr.ui-widget-content > td:nth-child(3)",
-                func: x=> x.replace("Quant.", '')
+                selector: "#j_id_19\\:j_id_1z_data > tr > td:nth-child(3)",
+                re: /Quant.([0-9,\.]+)/
             },
             'items_un':{
-                selector: "tr.ui-widget-content > td:nth-child(4)",
-                func: x=> x.replace("Val. UnitR$", '')
+                selector: "#j_id_19\\:j_id_1z_data > tr > td:nth-child(6)",
+                re: /UN: (.+)/
             },
             'items_un_value':{
-                selector: "tr.ui-widget-content > td:nth-child(5)",
-                func: x=> x.replace("Val.", '')
+                selector: "#j_id_19\\:j_id_1z_data > tr > td:nth-child(4)",
+                re: /Val. UnitR\$ ([0-9,\.]+)/
             },            
             'items_total_value':{
-                selector: "tr.ui-widget-content > td:nth-child(6)",
-                func: x=> x.replace("Val. TotalR$", '')
+                selector: "#j_id_19\\:j_id_1z_data > tr > td:nth-child(5)",
+                re: /Val. TotalR\$ ([0-9,\.]+)/
             },
-            'total':{
+           'total':{
                 selector: "#j_id_19\\:j_id_2h_content > div:nth-child(2) > div:nth-child(2)",
-                func: x=> x.replace("R$", '')
             },        
-            'payment_type':{
-                selector: "#respostaWS > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > table:nth-child(2) > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(6) > td:nth-child(1) > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(4) > td:nth-child(1)",
-                func: x=> x.replace("div.ui-panelgrid-cell:nth-child(4)", '')
+           'payment_type':{
+                selector: "#j_id_19\\:j_id_2h_content > div:nth-child(1) > div:nth-child(4)",
+                func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
             },          
-            'customer_name':{
-                selector: "#j_id_19\\:j_id_2o\\:j_id_3f > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(2)",
-            },     
-            'customer_cpf':{
-                selector: "#j_id_19\\:j_id_2o\\:j_id_3f > table:nth-child(1) > tbody:nth-child(1) > tr:nth-child(2) > td:nth-child(2)",
-            },            
-        },
-    ],
+           'customer_name':{
+                selector: "#j_id_19\\:j_id_2o\\:j_id_3s",
+                re: /Nome:([A-Za-z,\s]+)/,
+                func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
 
-    'http://apps.sefaz.to.gov.br':[
-        {
-            // idDocumento ex.: 6993515,
-            '__verifyFunc':
-                async ($) =>{
-                    return $.html().includes('404 - Not Found')
-                },
-            'chave':{
-                re: /qrcodeNFCe\?p=([0-9]{44})/,
+            },     
+           'customer_cpf':{
+                selector: "#j_id_19\\:j_id_2o\\:j_id_3s",
+                re: /CPF: ([0-9,\.\-]+)/,
             },
+            'datetime':{
+                selector:'#j_id_19\\:j_id_2o\\:j_id_2p > table > tbody > tr:nth-child(4) > td:nth-child(2)',
+            }        
         },
+
+        {
+            '__verifyFunc':
+            async ($) =>{
+                return $.html().includes('HashCode inválido')
+            },
+            // idDocumento ex.: 7016921,
+            'chave':{
+                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+            },
+            'error':{
+                func: x=>'HashCode inválido'
+            }
+        },
+
+        {
+            '__verifyFunc':
+            async ($) =>{
+                return $.html().includes('CSC revogado')
+            },
+            // idDocumento ex.: 7016921,
+            'chave':{
+                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+            },
+            'error':{
+                func: x=>'CSC revogado'
+            }
+        }
     ],
 
 }

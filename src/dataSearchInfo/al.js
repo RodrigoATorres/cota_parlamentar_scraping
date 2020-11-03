@@ -41,14 +41,18 @@ module.exports = {
             },          
            'customer_name':{
                 selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
-                re: /Nome:([A-Za-z,\s]+)/,
+                re: /Nome:([A-Za-z,\s]+)\n/,
                 func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
 
             },     
            'customer_cpf':{
                 selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
                 re: /CPF: ([0-9,\.\-]+)/,
-            },            
+            },     
+            'datetime':{
+                selector:'#infos > div:nth-child(1) > div > div > ul > li',
+                re: /Emissão: ([0-9]{2}\/[0-9]{2}\/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2})/
+            }       
         },
 
     ],

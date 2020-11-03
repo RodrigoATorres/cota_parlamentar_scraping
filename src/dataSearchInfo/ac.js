@@ -1,6 +1,6 @@
 module.exports = {
 
-    'http://www.sefaznet.ac.gov.br':[
+    'http://sefaznet.ac.gov.br':[
         {
         //     // idDocumento ex.: 7004498,
             'chave':{
@@ -49,6 +49,10 @@ module.exports = {
                 selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
                 re: /CPF: ([0-9,\.\-]+)/,
             },            
+            'datetime':{
+                selector: "#infos > div:nth-child(1) > div ",
+                re: /Emissão: (.+)\n/
+            },    
         },
 
     ],

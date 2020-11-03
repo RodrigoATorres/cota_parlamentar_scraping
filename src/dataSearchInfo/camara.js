@@ -1,6 +1,6 @@
 module.exports = {
 
-    "https://www.camara.leg.br":[
+    "https://camara.leg.br":[
         {
         // idDocumento ex.: 6992119,
             'chave':{

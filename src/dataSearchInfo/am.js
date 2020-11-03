@@ -1,8 +1,10 @@
 module.exports = {
 
-    'http://www4.fazenda.rj.gov.br':[
+    'https://sistemas.sefaz.am.gov.br':[
+
         {
-        //     // idDocumento ex.: 6993551,
+            //     13200101706877000165650030001024921219187001,
+            __frame:1,
             'chave':{
                 selector: '.chave',
                 func: x => x.replace(/\s/g, '')
@@ -32,40 +34,29 @@ module.exports = {
             'items_total_value':{
                 selector: "[id^='Item\\ \\+\\ '] > td.txtTit.noWrap > span",
             },
-           'total':{
+            'total':{
                 selector: ".txtMax",
             },        
-           'payment_type':{
+            'payment_type':{
                 selector: "#totalNota > div:nth-child(4) > label:nth-child(1)",
                 func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
             },          
-           'customer_name':{
+            'customer_name':{
                 selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
                 re: /Nome:([A-Za-z,\s]+)/,
                 func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
 
             },     
-           'customer_cpf':{
+            'customer_cpf':{
                 selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
                 re: /CPF: ([0-9,\.\-]+)/,
-            },
-
+            },            
             'datetime':{
-                selector:'#infos > div:nth-child(1) > div > div > ul > li',
-                re: /Emissão: (^\-) -/
-            }          
+                selector: "#infos > div:nth-child(1) > div ",
+                re: /Emissão: ([0-9]{2}\/[0-9]{2}\/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2})/
+            },    
         },
-
-        {
-            // idDocumento ex.: 7016921,
-            'chave':{
-                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-            },
-            'error':{
-                func: x=>'Incomplete loading'
-            }
-        }
-
+ 
     ],
 
 }

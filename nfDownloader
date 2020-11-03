@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+
+const omelette = require('omelette');
+
+const completion = omelette(`nfDownloader <action> <user> <repo>`);
+
+// Bind events for every template part.
+completion.on('action', ({ reply }) => {
+  reply([ 'clone', 'update', 'push' ])
+})
+
+completion.on('user', ({ reply }) => {
+  reply(fs.readdirSync('/Users/'))
+})
+
+completion.on('repo', ({ before, reply }) => {
+  reply([
+    `http://github.com/${before}/helloworld`,
+    `http://github.com/${before}/blabla`
+  ])
+})
+
+// Initialize the omelette.
+completion.init()
+
+try {
+  // Pick shell init file automatically
+  completion.setupShellInitFile()
+
+  // // Or use a manually defined init file
+  // completion.setupShellInitFile('~/.zshrc')
+
+} catch (err) {
+  console.log(err)
+  // setupShellInitFile() throws if the used shell is not supported
+}
+
+// If you want to have a setup feature, you can use `omeletteInstance.setupShellInitFile()` function.
+if (~process.argv.indexOf('--setup')) {
+  completion.setupShellInitFile()
+}
+
+// Similarly, if you want to tear down autocompletion, use `omeletteInstance.cleanupShellInitFile()`
+if (~process.argv.indexOf('--cleanup')) {
+  completion.cleanupShellInitFile()
+}
+
+// Rest is yours
+console.log("Your program's default workflow.")
+console.log(process.argv)
+
+// #!/usr/bin/env node
+// 'use strict';
+// const base = require('./dist/index');
+// const omelette = require('omelette');
+
+// const completion = omelette(`cmd.js <action> <user> <repo>`);
+
+// // Bind events for every template part.
+// completion.on('action', ({ reply }) => {
+//   reply([ 'clone', 'update', 'push' ])
+// })
+ 
+// completion.on('user', ({ reply }) => {
+//   reply(fs.readdirSync('/Users/'))
+// })
+ 
+// completion.on('repo', ({ before, reply }) => {
+//   reply([
+//     `http://github.com/${before}/helloworld`,
+//     `http://github.com/${before}/blabla`
+//   ])
+// })
+
+// // Initialize the omelette.
+// completion.init()
+
+// const isCloseAllWinBefore = process.argv.indexOf('--closeAllOpenWindows') > -1;
+// const isAllowInputArgs = process.argv.indexOf('--allowInputArgs') > -1;
+// const action = process.argv[2];
+
+
+// if (action === 'save') {
+//   base.saveSession(sessionName, savePrompts).then(killX11);
+// } else if (action === 'restore') {
+//   base.restoreSession(sessionName, isCloseAllWinBefore, isAllowInputArgs).then(killX11);
+// } else if (action === 'remove') {
+//   base.removeSession(sessionName).then(killX11);
+// } else if (action === 'resetCfg') {
+//   base.resetCfg();
+// } else if (action === 'list') {
+//   base.listSessions();
+// } else if (action === 'rename' && sessionName && (process.argv[4] && !process.argv[4].match(/^--/))) {
+//   base.renameSession(sessionName, process.argv[4]);
+// } else {
+
+//   console.log(`
+//   Linux Window Session Manager ${version}
+
+//   Saving your current windows:
+//   lwsm save [OPTIONAL_SESSION_ID]
+
+//   Restoring a session:
+//   lwsm restore [OPTIONAL_SESSION_ID] [--closeAllOpenWindows]
+
+//   List all saved sessions:
+//   lwsm list
+
+//   Renaming a session:
+//   lwsm save [OLD_NAME] [NEW_NAME]
+//   `);
+// }

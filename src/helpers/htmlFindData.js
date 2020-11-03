@@ -63,7 +63,7 @@ const getSingleData = async ($, searchInfo) => {
         )
     }
 
-    return [ ...new Set(res)]
+    return res
 }
 
 

@@ -1,8 +1,8 @@
 module.exports = {
 
-    'http://www4.fazenda.rj.gov.br':[
+    'http://app.sefaz.es.gov.br':[
         {
-        //     // idDocumento ex.: 6993551,
+        // ex.: 32200710985134000162650010000188299000204266,
             'chave':{
                 selector: '.chave',
                 func: x => x.replace(/\s/g, '')
@@ -27,7 +27,7 @@ module.exports = {
             },
             'items_un_value':{
                 selector: "[id^='Item\\ \\+\\ '] > td:nth-child(1) > span.RvlUnit",
-                re: /Vl. Unit.: ([0-9,\.]+)/
+                re: /Vl. Unit.:[\s]+([0-9,\.]+)/
             },            
             'items_total_value':{
                 selector: "[id^='Item\\ \\+\\ '] > td.txtTit.noWrap > span",
@@ -49,23 +49,11 @@ module.exports = {
                 selector: "div.ui-collapsible:nth-child(3) > div:nth-child(2)",
                 re: /CPF: ([0-9,\.\-]+)/,
             },
-
             'datetime':{
-                selector:'#infos > div:nth-child(1) > div > div > ul > li',
-                re: /Emissão: (^\-) -/
-            }          
+                selector:'#infos > div:nth-child(1) > div ',
+                re: /Emissão: ([0-9]{2}\/[0-9]{2}\/[0-9]{4} [0-9]{2}:[0-9]{2}:[0-9]{2})/
+            }        
         },
-
-        {
-            // idDocumento ex.: 7016921,
-            'chave':{
-                func: x=>'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-            },
-            'error':{
-                func: x=>'Incomplete loading'
-            }
-        }
-
     ],
 
 }
