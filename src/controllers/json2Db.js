@@ -6,26 +6,10 @@ module.exports = async (filePath) =>{
     let newDocs = []
     let res
     let count = 0
-    for (let el of jsonData){
-        if (el.descricao === "COMBUSTÍVEIS E LUBRIFICANTES."){
-            count += 1
-            console.log(count)
-            res = await dbObj.collection('despesas').findOne({"idDocumento":el.idDocumento,"ano":el.ano,"mes":el.mes})
-            if (res){
-                console.log('já tem')
-                // await dbObj.collection('despesas').deleteOne({"_id":res._id})
-            }
-            else{
-                console.log('tem não', el.ano, el.mes)
-                newDocs.push(el)
-            }
-            if (newDocs.length > 100){
-                let tmpRes = await dbObj.collection('despesas').insertMany(newDocs)
-                console.log(tmpRes.insertedIds)
-                newDocs = []
-            }
-        }
-    }
-    let tmpRes = await dbObj.collection('despesas').insertMany(newDocs)
-    console.log(tmpRes)
+
+    const result = await dbObj.collection('despesas').createIndex({ idDocumento: 1 }, { unique: true });
+    console.log(result)
+    let tmpRes = await dbObj.collection('despesas').insertMany(jsonData, { ordered: false } )
+    console.log(tmpRes.insertedIds)
+
 }
