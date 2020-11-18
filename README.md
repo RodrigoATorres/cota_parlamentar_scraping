@@ -13,6 +13,35 @@ Código utilizado para:
 - Processar dados extraídos, com o objetivo de identificar possíveis irregularidades
 - Gerar relatórios com os dados extraídos
 
+## Configurando
+O código só foi testado para uso, para rodar em outros sistemas operacionais, serão necessárias adaptações ao código
+
+### Configurando arquivo .env
+Inicialmente deve-se copiar o arquivo ".env.sample" para ".env"
+
+Nesse arquivo devem ser preenchidas as variáveis de ambiente.
+
+#### Google Vision API
+Para utilizar o recochecimento de texto dos PDFs, deve-se [obter uma chave para o Vision Api](https://cloud.google.com/vision/docs/setup), do goolge. O serviço é gratuito para até 1000 requisições mensais, acima dessa quantidade há um custo de 1,5 dólares para cada mil requisições. Esse custo pode ser abadito dos 300 dólares de crédito que a Google fornece para o primeiro ano de uitilização dos serviços.
+
+Caso não seja configurada uma chave para o api, as chaves de algumas NFs deverão ser inseridas manualmente.
+
+#### ANTI-CAPTCHA API
+Para utilizar os serviços de resolução de captcha, deverá ser obtida uma chave para o API do site [ANTI-CAPTCHA](https://anti-captcha.com/mainpage). O uso do serviço fica entre 1 e 2 dólares para cada 1000 captchas resolvidos.
+
+Caso não seja configurada nenhuma chave para a resolução dos captchas, esses deverão ser resolvidos manualmente pelo usuário.
+
+### Inicializando container
+Na raíz do projeto, deve-se criar o container do banco de dados
+```bash
+docker-compose up --no-start
+```
+Após a criação basta inicializálo
+```bash
+docker-compose start
+```
+
+
 ## Utilização
 #### Adicionar registros de gastos (em formato json) ao banco de dados.
 ```bash
