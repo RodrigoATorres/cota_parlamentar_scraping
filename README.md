@@ -19,7 +19,7 @@ Código utilizado para:
 nfDownloader json-to-db \<ARQUIVO JSON\>
 ```
 
-Dados podem ser baixados [aqui](https://www2.camara.leg.br/transparencia/cota-para-exercicio-da-atividade-parlamentar/dados-abertos-cota-parlamentar)
+Dados podem ser baixados [aqui](https://dadosabertos.camara.leg.br/swagger/api.html#staticfile)
 
 
 #### Fazer donwload de arquivos relativos às despesas dos parlamentares
