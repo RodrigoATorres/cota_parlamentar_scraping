@@ -108,6 +108,8 @@ const findInHtml = async (list_$, allSearchInfo) =>{
             output[key] = await getSingleData($, allSearchInfo[key])
         }
     }
+
+    output.fileName = `${output.chave[0]}${allSearchInfo['__frame'] ? '_frame' + allSearchInfo['__frame'] : ''}.html`
     return output
 }
 

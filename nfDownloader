@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
 const omelette = require('omelette');
+const fs = require('fs');
 
 const completion = omelette(`nfDownloader <action> <user> <repo>`);
 
 // Bind events for every template part.
 completion.on('action', ({ reply }) => {
-  reply([ 'clone', 'update', 'push' ])
+  reply([ 'find-keys', 'gen-key-html', 'process-key-data'])
 })
 
 completion.on('user', ({ reply }) => {
-  reply(fs.readdirSync('/Users/'))
+  reply(fs.readdirSync('.'))
 })
 
 completion.on('repo', ({ before, reply }) => {
@@ -21,19 +22,8 @@ completion.on('repo', ({ before, reply }) => {
 })
 
 // Initialize the omelette.
+
 completion.init()
-
-try {
-  // Pick shell init file automatically
-  completion.setupShellInitFile()
-
-  // // Or use a manually defined init file
-  // completion.setupShellInitFile('~/.zshrc')
-
-} catch (err) {
-  console.log(err)
-  // setupShellInitFile() throws if the used shell is not supported
-}
 
 // If you want to have a setup feature, you can use `omeletteInstance.setupShellInitFile()` function.
 if (~process.argv.indexOf('--setup')) {
@@ -45,68 +35,152 @@ if (~process.argv.indexOf('--cleanup')) {
   completion.cleanupShellInitFile()
 }
 
-// Rest is yours
-console.log("Your program's default workflow.")
-console.log(process.argv)
+const { program } = require('commander');
 
-// #!/usr/bin/env node
-// 'use strict';
-// const base = require('./dist/index');
-// const omelette = require('omelette');
+const getPdfKeys = require('./src/controllers/getPdfKeys')
+const genImageKeysHtml = require('./src/controllers/genImageKeysHtml')
+const processKeyData = require('./src/controllers/processKeyData')
+const {paralalelDonwloadNfList, paralalelDonwloadDocList, paralalelDonwloadDocChildren} = require('./src/controllers/nfDonwloader')
+const {getNfDataFromDocFiles, getNfDataFromDocIds, getChildrenNfDataFromDocIds} = require('./src/controllers/nfProcessor')
+const {reportFromDocs, noChildReport} = require('./src/controllers/reportGenerator')
+const json2Db = require('./src/controllers/json2Db')
+const downloadDocFiles = require('./src/controllers/downloadDocFiles')
 
-// const completion = omelette(`cmd.js <action> <user> <repo>`);
+program
+  .command('donwload-doc-files')
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    downloadDocFiles(docIdsList).then(res => console.log(res))
+  })
 
-// // Bind events for every template part.
-// completion.on('action', ({ reply }) => {
-//   reply([ 'clone', 'update', 'push' ])
-// })
- 
-// completion.on('user', ({ reply }) => {
-//   reply(fs.readdirSync('/Users/'))
-// })
- 
-// completion.on('repo', ({ before, reply }) => {
-//   reply([
-//     `http://github.com/${before}/helloworld`,
-//     `http://github.com/${before}/blabla`
-//   ])
-// })
+program
+  .command('find-keys')
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    getPdfKeys(docIdsList).then(res => console.log(res))
+  })
 
-// // Initialize the omelette.
-// completion.init()
+program
+  .command('gen-key-html')
+  .option('-o, --output <outputFile>','Output file', null)
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
 
-// const isCloseAllWinBefore = process.argv.indexOf('--closeAllOpenWindows') > -1;
-// const isAllowInputArgs = process.argv.indexOf('--allowInputArgs') > -1;
-// const action = process.argv[2];
+    if (!cmd.output){
+      cmd.output = cmd.args[0].replace(/\.[^/.]+$/, "") + '.html'
+    }
+    genImageKeysHtml(docIdsList, cmd.output).then(res => console.log(res))
+
+  })
+
+program
+  .command('process-key-data')
+  .action( (cmd) =>{
+    let keysInfo = {}
+    for (const inputFile of cmd.args){
+      keysInfo = {... keysInfo, ... JSON.parse(fs.readFileSync(inputFile)) }
+    }
+    processKeyData(keysInfo).then(res => console.log(res))
+  })
+
+  program
+  .command('donwload-nf-list')
+  .option('-r, --rewrite', 'Rewrite existing files?', false)
+  .option('-p, --parallel-browsers <njobs>', 'Number of parallel browser to run',1)
+  .action( (cmd) =>{
+    let nfList = []
+    for (const inputFile of cmd.args){
+      nfList = nfList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    paralalelDonwloadNfList(nfList, cmd.parallelBrowsers, cmd.rewrite).then(res => console.log(res))
+  })
+
+program
+  .command('donwload-doc-list')
+  .option('-r, --rewrite', 'Rewrite existing files?', false)
+  .option('-p, --parallel-browsers <njobs>', 'Number of parallel browser to run',1)
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    paralalelDonwloadDocList(docIdsList, cmd.parallelBrowsers, cmd.rewrite).then(res => console.log(res))
+  })
+
+program
+  .command('donwload-doc-children')
+  .option('-r, --rewrite', 'Rewrite existing files?', false)
+  .option('-p, --parallel-browsers <njobs>', 'Number of parallel browser to run',1)
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    paralalelDonwloadDocChildren(docIdsList, cmd.parallelBrowsers, cmd.rewrite).then(res => console.log(res))
+  })
 
 
-// if (action === 'save') {
-//   base.saveSession(sessionName, savePrompts).then(killX11);
-// } else if (action === 'restore') {
-//   base.restoreSession(sessionName, isCloseAllWinBefore, isAllowInputArgs).then(killX11);
-// } else if (action === 'remove') {
-//   base.removeSession(sessionName).then(killX11);
-// } else if (action === 'resetCfg') {
-//   base.resetCfg();
-// } else if (action === 'list') {
-//   base.listSessions();
-// } else if (action === 'rename' && sessionName && (process.argv[4] && !process.argv[4].match(/^--/))) {
-//   base.renameSession(sessionName, process.argv[4]);
-// } else {
+program
+  .command('process-docs')
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    getNfDataFromDocFiles(docIdsList).then(res => console.log(res))
+  })
 
-//   console.log(`
-//   Linux Window Session Manager ${version}
+program
+  .command('process-nfs')
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    getNfDataFromDocIds(docIdsList).then(res => console.log(res))
+  })
 
-//   Saving your current windows:
-//   lwsm save [OPTIONAL_SESSION_ID]
+program
+  .command('process-nfs-children')
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    getChildrenNfDataFromDocIds(docIdsList).then(res => console.log(res))
+  })
 
-//   Restoring a session:
-//   lwsm restore [OPTIONAL_SESSION_ID] [--closeAllOpenWindows]
+program
+  .command('generate-report')
+  .action( (cmd) =>{
+    let docIdsList = []
+    for (const inputFile of cmd.args){
+      docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
+    }
+    reportFromDocs(docIdsList).then(res => console.log(res))
+  })
 
-//   List all saved sessions:
-//   lwsm list
+program
+  .command('no-child-report')
+  .action( (cmd) =>{
+    noChildReport().then(res => console.log(res))
+  })
 
-//   Renaming a session:
-//   lwsm save [OLD_NAME] [NEW_NAME]
-//   `);
-// }
+program
+  .command('json-to-db')
+  .action( (cmd) =>{
+    for (const inputFile of cmd.args){
+      json2Db(inputFile).then(res => console.log(res))
+    }
+  })
+
+program.parse()

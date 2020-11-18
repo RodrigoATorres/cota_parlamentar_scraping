@@ -1,4 +1,6 @@
 require('dotenv').config()
+const dbObj = require('./dbConnection')
+
 const {getNfData} = require('./nfProcessor');
 const ufFromCode = require('../helpers/ufFromCode');
 const fs = require('fs');
@@ -54,6 +56,9 @@ const objStr2Num = (obj) =>{
   }
 }
 
+let minExpense = [{}, 500000]
+let maxExpense = [{}, 0]
+
 const analyzeData = (nfData, childData) =>{
   
   if (childData.reduce((prev,el) => (prev) && el.items_total_value, true)){
@@ -79,6 +84,9 @@ const analyzeData = (nfData, childData) =>{
 
     nfData.minExpense = allExpenses.length > 0 ? Math.min.apply(null, allExpenses): null
     nfData.maxExpense = allExpenses.length > 0 ? Math.max.apply(null, allExpenses): null
+
+    if (nfData.minExpense  && (nfData.minExpense < minExpense[1])){minExpense = [nfData, nfData.minExpense]}
+    if (nfData.maxExpense > maxExpense[1]){maxExpense = [nfData, nfData.maxExpense]}
 
     let score = 0
     score += allExpenses.reduce((prev, el) => el > 300 ? prev + el/100 - 2: prev,0)
@@ -163,11 +171,8 @@ const genNFeReport = async (nfeData, dbObj) => {
         sumCheck += tmp_data.total[0] ? tmp_data.total[0] : 0 
       }
 
-      if (nfc === '29200404681824000125650010002523881002665336'){
-        console.log(tmp_data)
-      }
-      if (fs.existsSync(`./unprocessedNFs/${nfc}.html`)){
-        await copyFile(`./unprocessedNFs/${nfc}.html`, `./HTML_reports/NFs/${nfc}.html`)  
+      if (tmp_data.fileName && fs.existsSync(`./unprocessedNFs/${tmp_data.fileName}`)){
+        await copyFile(`./unprocessedNFs/${tmp_data.fileName}`, `./HTML_reports/NFs/${nfc}.html`)  
         refTable += `|${nfc_idx+1}|[${nfc}](../NFs/${nfc}.html)|${refTableKeys.map(el => tmp_data[el]?tmp_data[el]:'error').join('|')}|\n`
       }
       else{
@@ -228,89 +233,79 @@ const genNFeReport = async (nfeData, dbObj) => {
 
 
 
-const MongoClient = require('mongodb').MongoClient
-const MONGO_URL = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.DB_ADDRES}/${process.env.DB_NAME}?authSource=admin`;
-console.log(MONGO_URL)
+module.exports.reportFromDocs = async(docIdList) => {
 
-MongoClient
-  .connect(
-    MONGO_URL
+  let depData = {}
+  let allData = []
+
+  let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
+  
+  for (row of res){
+    if (!depData[row.nomeParlamentar]){
+      depData[row.nomeParlamentar] = []
+    }
+    depData[row.nomeParlamentar].push(row)
+    allData.push(row)
+    await genNFeReport(row, dbObj)
+  }
+
+  console.log(nfCodesError)
+  console.log(nfCodesFine)
+
+  fs.writeFile(
+
+      'error_codes.json',
+  
+      JSON.stringify(nfCodesError.sort()),
+  
+      function (err) {
+          if (err) {
+              console.error('Crap happens');
+          }
+      }
+  );
+
+  for (tmp_code of nfCodesError){
+    try{
+      await copyFile(`./unprocessedNFs/${tmp_code}.png`, `./error_nfs/${tmp_code}.png`)
+    }
+    catch{
+    }
+  }
+
+  console.log(allData)
+  allData.sort( (a,b) => b.score - a.score )
+  console.log(allData)
+  let scoredOnly = allData.filter( el => (el.score && (el.score > 0)) )
+  let scoreMd = scoredOnly.reduce( (prev, el) => prev + fs.readFileSync(`./mds/${el.chave}.md`), '')
+  await writeFile(`HTML_reports/Geral/Ranking.md`, scoreMd)
+
+  let invalidData = allData.filter( a => !a.isValid )
+  invalidData = invalidData.filter( el => fs.existsSync(`./mds/${el.chave}.md`) )
+
+  let invalidMd = invalidData.reduce( (prev, el) => prev + fs.readFileSync(`./mds/${el.chave}.md`), '')
+  await writeFile(`HTML_reports/Geral/Erros.md`, invalidMd)
+
+  console.log(minExpense)
+  console.log(maxExpense)
+
+}
+
+
+module.exports.noChildReport = async() => {
+
+  let res = await dbObj.collection('despesas').find({"dados.children":[], ano: 2019}).toArray()
+
+  let keys = ["urlDocumento","nomeParlamentar","cpf","idDeputado","numeroCarteiraParlamentar","legislatura","siglaUF","siglaPartido","codigoLegislatura","numeroSubCota","descricao","numeroEspecificacaoSubCota","descricaoEspecificacao","fornecedor","cnpjCPF","numero","tipoDocumento","dataEmissao","valorDocumento","valorGlosa","valorLiquido","mes","ano","lote","numeroDeputadoID","idDocumento"]
+  let noChildCsv = keys.join(',') + '\n'
+
+  res.forEach(el => {
+      for (let key of keys){
+          noChildCsv += el[key]+ ','
+      }
+      noChildCsv+='\n'
+  }
   )
-  .then( async(db) =>{
-    let dbObj = db.db('cota_parlamentar')
+  fs.writeFileSync('./noChildData2.csv',  noChildCsv);
 
-    const allInfo = require('../doc_info')
-
-    let depData = {}
-    let allData = []
-    for (let info of allInfo){
-
-      let res = await dbObj.collection('despesas').find({"descricao":'COMBUSTÍVEIS E LUBRIFICANTES.', 'nomeParlamentar':info[0], 'valorLiquido':info[1]}).toArray()
-      
-      for (row of res){
-        if (!depData[row.nomeParlamentar]){
-          depData[row.nomeParlamentar] = []
-        }
-        depData[row.nomeParlamentar].push(row)
-        allData.push(row)
-        await genNFeReport(row, dbObj)
-      }
-    }
-
-    console.log(nfCodesError)
-    console.log(nfCodesFine)
-
-    fs.writeFile(
-
-        'error_codes.json',
-    
-        JSON.stringify(nfCodesError.sort()),
-    
-        function (err) {
-            if (err) {
-                console.error('Crap happens');
-            }
-        }
-    );
-
-    for (tmp_code of nfCodesError){
-      try{
-        await copyFile(`./unprocessedNFs/${tmp_code}.png`, `./error_nfs/${tmp_code}.png`)
-      }
-      catch{
-      }
-    }
-
-    console.log(allData)
-    allData.sort( (a,b) => b.score - a.score )
-    console.log(allData)
-    let scoredOnly = allData.filter( el => (el.score && (el.score > 0)) )
-    let scoreMd = scoredOnly.reduce( (prev, el) => prev + fs.readFileSync(`./mds/${el.chave}.md`), '')
-    await writeFile(`HTML_reports/Geral/Ranking.md`, scoreMd)
-
-    let invalidData = allData.filter( a => !a.isValid )
-    invalidData = invalidData.filter( el => fs.existsSync(`./mds/${el.chave}.md`) )
-
-    let invalidMd = invalidData.reduce( (prev, el) => prev + fs.readFileSync(`./mds/${el.chave}.md`), '')
-    await writeFile(`HTML_reports/Geral/Erros.md`, invalidMd)
-
-    for (let key of Object.keys(depData)){
-      const markdownpdf = require("markdown-pdf")
-      let files = depData[key].map(el => `./mds/${el.chave}.md`)
-      files = files.filter(el => fs.existsSync(el))
-
-      // if (!fs.existsSync(`./HTML_reports/${key}`)){
-      //   fs.mkdirSync(`./HTML_reports/${key}`);
-      // }
-
-      let combinedMd = files.reduce(
-        (prev, file) => prev + fs.readFileSync(file),
-        '',
-      );
-      await writeFile(`HTML_reports/Parlamentares/${key}.md`, combinedMd)
-
-      markdownpdf({paperFormat: 'A2', cssPath: './custom.css', paperOrientation: 'landscape'}).concat.from(files).to(`report_${key}.pdf`, function () {
-      })
-    }
-
-  })
+}

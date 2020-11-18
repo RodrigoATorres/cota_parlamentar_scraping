@@ -13,8 +13,10 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 puppeteer.use(StealthPlugin())
 const extract = util.promisify(require('pdf-text-extract'))
 
+const dbObj = require('./dbConnection')
 
-const allInfo = require('./doc_info')
+
+const allInfo = require('../doc_info')
 
 
 function sleep(ms) {
@@ -32,12 +34,13 @@ async function downloadPDF(pdfURL, outputFilename) {
 const getImageText = async (filename) => {
     // Performs label detection on the image file
     const [result] = await visionClient.documentTextDetection(filename, {languageHints: "Korean"});
+    console.log(result)
     return result.fullTextAnnotation.text;
 }
 
 const getKeyFromPDF = async(filePath) =>{
     let text = await extract(filePath, { splitPages: false })
-    console.log(text)
+
     text = text.reduce( (el, prev) => prev+el, '')
     regexs = [
         /([0-9]{2}-[0-9]{2}\/[0-9]{2}-[0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}-[0-9]{2}-55-[0-9]{3}-[0-9]{3}\.[0-9]{3}\.[0-9]{3}-[0-9]{3}\.[0-9]{3}\.[0-9]{4})/,
@@ -55,70 +58,66 @@ const getKeyFromPDF = async(filePath) =>{
     return matches
 }
 
-
-if (require.main === module) {
-    require('dotenv').config()
-
+module.exports = async (docIdsList) =>{
+    console.log(docIdsList)
     let wait = true;
 
     ioHook.start();
 
+    // Control
     ioHook.registerShortcut([29, 42, 56], async (keys) => {
         await exec('xclip -selection clipboard -t image/png -o > tmp.png')
         await sleep(200)
         wait=false
     });
 
-    const MongoClient = require('mongodb').MongoClient
-    const MONGO_URL = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.DB_ADDRES}/${process.env.DB_NAME}?authSource=admin`;
-    console.log(MONGO_URL)
+    let browser = await puppeteer.launch({
+        headless: false,
+        slowMo: 10,
+        defaultViewport: null,
+        ignoreHTTPSErrors: true,
+    });
+    let page = await browser.newPage();
+    
+    const allInfo = []
 
-    MongoClient
-    .connect(
-        MONGO_URL
-    )
-    .then( async(db) =>{
+    for (let docId of docIdsList){
 
-        let browser = await puppeteer.launch({
-            headless: false,
-            slowMo: 10,
-            defaultViewport: null,
-            ignoreHTTPSErrors: true,
-        });
-        let page = await browser.newPage();
-        
-        let dbObj = db.db('cota_parlamentar')
+        let res = await dbObj.collection('despesas').findOne({"idDocumento":docId})
 
-        for (let info of allInfo){
-            let res = await dbObj.collection('despesas').find({"descricao":'COMBUSTÍVEIS E LUBRIFICANTES.', 'nomeParlamentar':info[0], 'valorLiquido':info[1]}).toArray()
-            for (el of res){
-                console.log(el.urlDocumento)
-                if ( el.urlDocumento  && (el.urlDocumento.includes('.pdf')) && (!el.chaveOCR)  && (!el.chavePDF)){
-                    await downloadPDF(el.urlDocumento, `./nfPdfs/${el.idDocumento}.pdf`);
-
-                    let extract_key = await(getKeyFromPDF(`./nfPdfs/${el.idDocumento}.pdf`))
-
-                    if (extract_key.length >0){
-                        console.log(extract_key)
-                        await dbObj.collection('despesas').updateOne({idDocumento:el.idDocumento}, {$set:{chavePDF:extract_key}})
-                    }
-                    else{
-                        page.goto(el.urlDocumento)
-                        while (wait){await sleep(200)}
-                        wait = true
-                        await rename(`./tmp.png`, `./unprocessedKeyImages/${el.idDocumento}.png`)
-                        await sleep(200)
-                        let guessKey = await getImageText(`./unprocessedKeyImages/${el.idDocumento}.png`)
-                        await dbObj.collection('despesas').updateOne({idDocumento:el.idDocumento}, {$set:{chaveOCR:guessKey}})
-                    }
-                }
-            }
-            console.log('finished')
-
-
+        if (!res || !res.urlDocumento.includes('.pdf')){
+            allInfo.push({})
+            continue
+        }
+        if (res.infoChave){
+            allInfo.push(res.infoChave)
+            console.log('Já tem info')
+            continue
         }
 
-    });
+        let pdfPath = res.urlDocumento
+
+        await downloadPDF(res.urlDocumento, `./nfPdfs/${res.idDocumento}.pdf`);
+
+        let info = {}
+        info.keysFromText = await(getKeyFromPDF(`./nfPdfs/${res.idDocumento}.pdf`))
+
+        if (info.keysFromText.length == 0){
+            page.goto(pdfPath)
+            while (wait){await sleep(200)}
+            wait = true
+            await rename(`./tmp.png`, `./unprocessedKeyImages/${res.idDocumento}.png`)
+            await sleep(200)
+            info.keyImage = `./unprocessedKeyImages/${res.idDocumento}.png`
+            info.keyFromOcr = await getImageText(`./unprocessedKeyImages/${res.idDocumento}.png`)
+        }
+
+        await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})
+        allInfo.push(info)
+    }
+
+    browser.close()
+
+    return allInfo
+
 }
-
-

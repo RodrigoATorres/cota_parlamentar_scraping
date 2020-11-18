@@ -1,8 +1,13 @@
 const fs = require('fs');
 const cheerio = require('cheerio');
 
+const path = require('path')
+const dbObj = require('./dbConnection')
 const findInHtml = require('../helpers/htmlFindData').findInHtml;
 const keySearchInfo = require('../dataSearchInfo');
+
+const util = require('util');
+const copyFile = util.promisify(fs.copyFile);
 
 let unregistred_domains = {};
 
@@ -45,101 +50,116 @@ const getNfData = async (fPath) =>{
 }
 module.exports.getNfData = getNfData;
 
-// getNfData('./unprocessedNFs/35200405794555000176550010000025761010025760.html')
 
+module.exports.getNfDataFromDocFiles = async (docIdList, nfFolder = './unprocessedDocuments/') => {
 
-if (require.main === module) {
-    require('dotenv').config()
+    const noChild = []
+    const files = docIdList.map( el => path.join(nfFolder, String(el)) + '.html')
+    for (let [i, file] of files.entries()){
 
-    const MongoClient = require('mongodb').MongoClient
-    const MONGO_URL = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.DB_ADDRES}/${process.env.DB_NAME}?authSource=admin`;
-    console.log(MONGO_URL)
-
-    MongoClient
-    .connect(
-        MONGO_URL
-    )
-    .then( async(db) =>{
-
-        let dbObj = db.db('cota_parlamentar')
-
-        let count = 0
-        let count_pdf = 0
-        let files = [];
-        const allInfo = require('../doc_info')
-        for (let info of allInfo){
-            let res = await dbObj.collection('despesas').find({"descricao":'COMBUSTÍVEIS E LUBRIFICANTES.', 'nomeParlamentar':info[0], 'valorLiquido':info[1]}).toArray()
-
-            for (el of res){
-                if (fs.existsSync(`./unprocessedNFs/${el.chave}.html`)){
-                    files.push([`./unprocessedNFs/${el.chave}.html`, el.idDocumento])
-                }
-                else if(el.chavePDF && fs.existsSync(`./unprocessedNFs/${el.chavePDF[0]}.html`)){
-                    files.push([`./unprocessedNFs/${el.chavePDF[0]}.html`, el.idDocumento])
-                }
-                else if (fs.existsSync(`./unprocessedDocuments/${el.idDocumento}.html`)){
-                    files.push([`./unprocessedDocuments/${el.idDocumento}.html`, el.idDocumento])
-                }
-                else{
-                    console.log(el.idDocumento)
-                    console.log(el.chavePDF)
-                }
-                count +=1
-                if (el.urlDocumento && el.urlDocumento.includes('.pdf')){
-                    count_pdf+=1
-                }
-            }
+        if (!fs.existsSync(file)){
+            continue
         }
 
-        files = [...new Set(files)]
-        console.log(files)
-        console.log(count)
-        console.log(count_pdf)
+        let data = await getNfData(file)
         let error_keys = []
-        let noChild= []
-        let all_child = []
-        for (let [file, idDocumento] of files){
-            if (!file.includes('frame') && (file !='.gitignore')){
-                let data = await getNfData(file)
-                console.log(file)
-                if (!data.chave){
-                    error_keys.push(file.replace(/\D+/g, ''))
-                }
-                else if (data.error){
-                    error_keys.push(data.chave[0])
-                }
-                else if (!data.children){
-                    noChild.push(file)
-                }
-                
-                if (data.children){
-                    console.log(data.children.length)
-                    all_child = all_child.concat(data.children)
-                }
 
-                if (data.chave){
-                    await dbObj.collection('despesas').updateOne({idDocumento:idDocumento}, {$set:{chave:data.chave[0]}})
-                    await dbObj.collection('despesas').updateOne({idDocumento:idDocumento}, {$set:{dados:data}})
-                }
-            }
+        if (!data.chave){
+            error_keys.push(file.replace(/\D+/g, ''))
         }
-        // console.log(error_keys)
-        // console.log(noChild)
-        // console.log(unregistred_domains)
-        // console.log(all_child.sort())
-        // fs.writeFile(
+        else if (data.error){
+            error_keys.push(data.chave[0])
+          
+        }
+        else if ((data.chave[0].slice(20, 22) == '55') && (!data.has_refs || data.has_refs.length === 0)){
+            noChild.push(data)
+        }
 
-        //     'list_children.json',
-        
-        //     JSON.stringify(all_child.sort()),
-        
-        //     function (err) {
-        //         if (err) {
-        //             console.error('Crap happens');
-        //         }
-        //     }
-        // );
-    });
+
+        if (data.chave){
+            await dbObj.collection('despesas').updateOne({idDocumento:docIdList[i]}, {$set:{chave:data.chave[0]}})
+            await dbObj.collection('despesas').updateOne({idDocumento:docIdList[i]}, {$set:{dados:data}})
+            await copyFile(file, `./HTML_reports/NFs/${data.chave}.html`)
+            let idx = 1
+            while (fs.existsSync(file.replace('.html', `_frame${idx}.html`))) {
+                await copyFile(file.replace('.html', `_frame${idx}.html`), `./HTML_reports/NFs/${data.chave}_frame${idx}.html`)
+                console.log(file.replace('.html', `_frame${idx}.html`), `./HTML_reports/NFs/${data.chave}_frame${idx}.html`)
+                idx+=1;
+            }
+
+        }
     }
+}
 
 
+module.exports.getNfDataFromDocIds = async (docIdList, nfFolder = './unprocessedNFs/') => {
+
+    let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
+    let nfList = res.reduce((prev,el) => el.chave? prev.concat([el.chave]): prev, [])
+    let error_keys = []
+
+
+    const files = nfList.map( el => path.join(nfFolder, el) + '.html')
+    for (let [i, file] of files.entries()){
+        
+        if (!fs.existsSync(file)){
+            error_keys.push(file.replace(/\D+/g, ''))
+            continue
+        }
+
+        let data = await getNfData(file)
+        console.log(data)
+
+        if (!fs.existsSync(file) || !data.chave){
+            error_keys.push(file.replace(/\D+/g, ''))
+        }
+        else if (data.error){
+            error_keys.push(data.chave[0])
+        }
+
+        if (data.chave){
+            await dbObj.collection('despesas').updateOne({idDocumento:res[i].idDocumento}, {$set:{chave:data.chave[0]}})
+            await dbObj.collection('despesas').updateOne({idDocumento:res[i].idDocumento}, {$set:{dados:data}})
+        }
+    }
+}
+
+module.exports.getChildrenNfDataFromDocIds = async (docIdList, nfFolder = './unprocessedNFs/') => {
+
+    let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
+    const error_keys = []
+
+    for (let docObj of res){
+
+        if (docObj.dados.children){
+            const files = docObj.dados.children.map(el => path.join(nfFolder, el) + '.html')
+            const childrenData = []
+    
+            for (let [i, file] of files.entries()){
+                let data
+                try{
+                    data = await getNfData(file)
+                }
+                catch{
+                    data = {}
+                }
+        
+                if (!data.chave || data.error){
+                    error_keys.push(docObj.dados.children[i])
+                }
+                childrenData.push(data)
+            }
+                
+            await dbObj.collection('despesas').updateOne({idDocumento:docObj.idDocumento}, {$set:{childrenData}})
+        }
+        else{
+            error_keys.push(docObj.dados.chave[0])
+        }
+
+
+    }
+    console.log(error_keys)
+
+}
+
+// 52200204489287000116650010002733601111575979

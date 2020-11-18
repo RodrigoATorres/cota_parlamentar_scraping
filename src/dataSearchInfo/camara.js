@@ -122,6 +122,68 @@ module.exports = {
                 },            
         },
 
+
+        {
+            //     // idDocumento ex.: 6745188,
+                'chave':{
+                    selector: '#lblChaveAcesso',
+                    func: x => x.replace(/[\s\-\/\.]*/g, '')
+                },
+                'estab_name':{
+                    selector: "#NFe > fieldset:nth-child(2) > table > tbody > tr > td.col-2 > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },
+                'estab_cnpj':{
+                    selector: "#NFe > fieldset:nth-child(2) > table > tbody > tr > td:nth-child(1) > span",
+                    re: /([0-9]{2}\.[0-9]{3}\.[0-9]{3}\/[0-9]{4}\-[0-9]{2})/
+                },
+                'items_name':{
+                    selector: ".fixo-prod-serv-descricao > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },
+                'items_qt':{
+                    selector: ".fixo-prod-serv-qtd > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },
+                'items_un':{
+                    selector: ".fixo-prod-serv-uc > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },
+                'items_un_value':{
+                    selector: '[id^="table"] > tbody:nth-child(1) > tr:nth-child(1) > td:nth-child(1) > table:nth-child(2) > tbody:nth-child(1) > tr:nth-child(4) > td:nth-child(1) > span:nth-child(2)',
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },            
+                'items_total_value':{
+                    selector: ".fixo-prod-serv-vb > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },
+               'total':{
+                    selector: "#Cobranca > fieldset > fieldset > table > tbody > tr:nth-child(2) > td:nth-child(2) > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },        
+               'payment_type':{
+                    selector: "#Cobranca > fieldset > fieldset > table > tbody > tr:nth-child(2) > td:nth-child(1) > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },          
+               'customer_name':{
+                    selector: "#DestRem > fieldset > table > tbody > tr:nth-child(1) > td > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                    },     
+               'customer_cpf':{
+                    selector: "#DestRem > fieldset > table > tbody > tr:nth-child(2) > td:nth-child(1) > span",
+                    func: x=> x.replace(/^\s+|\s+$|\s+(?=\s)/g, '')
+                },
+                'children':{
+                    selector:'#Inf > fieldset > fieldset > fieldset',
+                    re: /([0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4})/,
+                    func: x=> x.replace(/[^0-9]*/g, '')
+                },
+                'has_refs':{
+                    selector:'#Inf > fieldset > fieldset > legend',
+                    re: /Documentos\ Fiscais\ Referenciados/,
+                },
+        },
+
         {
             // idDocumento ex.: 7084249,
             '__verifyFunc':

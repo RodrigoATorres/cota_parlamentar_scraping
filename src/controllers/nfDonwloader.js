@@ -1,5 +1,6 @@
 const fs = require("fs");
 const puppeteer = require('puppeteer-extra')
+const dbObj = require('./dbConnection')
 // const puppeteer = require('puppeteer')
 const captchaSolvers = require('../helpers/captchaSolvers');
 const clipboardy = require('clipboardy');
@@ -196,7 +197,7 @@ const downloadNfList = async(nfList) =>{
     }
 }
 
-const  paralalelDonwloadNfList = async (nfList, nJobs, rewrite = false) =>{
+module.exports.paralalelDonwloadNfList = async (nfList, nJobs, rewrite = false) =>{
     console.log(nfList)
     nfList = [... new Set(nfList)]
     if (!rewrite){
@@ -205,82 +206,27 @@ const  paralalelDonwloadNfList = async (nfList, nJobs, rewrite = false) =>{
     }
     console.log(nfList)
 
-    let i,j,temparray,chunk = Math.ceil(nfList.length/nJobs);
-    for (i=0,j=nfList.length; i<j; i+=chunk) {
+    let temparray
+    let chunk = Math.ceil(nfList.length/nJobs);
+
+    for (let i=0; i<nfList.length; i+=chunk) {
         temparray = nfList.slice(i,i+chunk);
         await sleep(1000)
+        console.log(temparray)
         downloadNfList(temparray)
     }
 
 }
 
-
-if (require.main === module) {
-
-    // let nfList = require('../../list_children.json')
-    let nfList = require('../../error_codes.json')
-    // downloadNF('50200602394473000146650010003142721064020423')
-    paralalelDonwloadNfList(nfList, 15, true)
-
-
-    // require('dotenv').config()
-
-    // const MongoClient = require('mongodb').MongoClient
-    // const MONGO_URL = `mongodb://${process.env.MONGO_INITDB_ROOT_USERNAME}:${process.env.MONGO_INITDB_ROOT_PASSWORD}@${process.env.DB_ADDRES}/${process.env.DB_NAME}?authSource=admin`;
-    // console.log(MONGO_URL)
-
-    // MongoClient
-    // .connect(
-    //     MONGO_URL
-    // )
-    // .then( async(db) =>{
-        
-    //     let dbObj = db.db('cota_parlamentar')
-    //     let nfList = []
-
-    //     let res = await dbObj.collection('despesas').find({"descricao":'COMBUSTÍVEIS E LUBRIFICANTES.', 'chave':{'$exists':true}}).toArray()
-    //     for (let el of res){
-    //         if (!fs.existsSync(`unprocessedNFs/${el.chave}.html`)){
-    //             nfList.push(el.chave)
-    //             console.log(2, el.idDocumento)
-    //         }
-    //     }
-
-    //     res = await dbObj.collection('despesas').find({"descricao":'COMBUSTÍVEIS E LUBRIFICANTES.', 'chavePDF':{'$exists':true}}).toArray()
-    //     for (let el of res){
-    //         if (!fs.existsSync(`unprocessedNFs/${el.chavePDF[0]}.html`)){
-    //             nfList.push(el.chavePDF[0])
-    //             console.log(1, el.idDocumento)
-    //         }
-    //     }
-        
-    //     console.log(nfList)
-    //     let i,j,temparray,chunk = Math.ceil(nfList.length/9);
-    //     for (i=0,j=nfList.length; i<j; i+=chunk) {
-    //         temparray = nfList.slice(i,i+chunk);
-    //         downloadNfList(temparray)
-    //     }
-
-    // });
+module.exports.paralalelDonwloadDocList = async (docIdList, nJobs, rewrite = false) =>{
+    let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
+    let nfList = []
+    res.forEach(el => el.chave? nfList.push(el.chave): console.log(el))
+    await this.paralalelDonwloadNfList(nfList, nJobs, rewrite = false)
 }
 
-
-
-
-// downloadNF('53200107822636000168650010005588641325055266');
-// downloadNF('26191270081518000182650030000659761551909706'); 
-// downloadNF('24200110797331000239650010002712171536061059');
-// downloadNF('14200101468484000160650010000435331128905442');
-// downloadNF('43200111115559000183650010001210501001225007');
-// downloadNF('15191015329606000142650650001651331299909901');
-// downloadNF('17200108036185000104650020001735591453348955');
-// downloadNF('22200109641208000164650040000111831234298181');
-// downloadNF('33200101904245000106650050000004381000012921');
-// downloadNF('25200105747008000130651250001218811001298628');
-// downloadNF('21200129018539000311650020000150341542040894');
-// downloadNF('16200109405430000400650030000900661002006657');
-// downloadNF('32200139385059000180650010000738231000931152');
-// downloadNF('28191207855647000144650010007334531012548159');
-// downloadNF('12200103492648000200650020001278581967439834');
-// downloadNF('27200112630679000181650030002741601896042686');
-// downloadNF('29200211170833000117650010003572859001603495');
+module.exports.paralalelDonwloadDocChildren = async (docIdList, nJobs, rewrite = false) =>{
+    let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
+    let nfList = res.reduce((prev,el) => prev.concat(el.dados.children), [])
+    await this.paralalelDonwloadNfList(nfList, nJobs, rewrite = false)
+}
