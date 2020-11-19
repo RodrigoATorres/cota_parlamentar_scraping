@@ -22,6 +22,7 @@
     "markdown-pdf": "^10.0.0",
     "mongoose": "^5.10.7",
     "omelette": "^0.4.15-1",
+    "p-queue": "^6.6.2",
     "pdf-text-extract": "^1.5.0",
     "pretty": "^2.0.0",
     "puppeteer": "^5.3.1",

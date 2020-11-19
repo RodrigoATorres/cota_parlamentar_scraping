@@ -7,6 +7,10 @@ const clipboardy = require('clipboardy');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 puppeteer.use(StealthPlugin())
 
+const ioHook = require('iohook');
+const {default: PQueue} = require('p-queue');
+const manualCaptchaQueue = new PQueue({concurrency: 1});
+
 const ufFromCode = require('../helpers/ufFromCode');
 const nfGetInfo = require('../nfGetInfo');
 
@@ -23,6 +27,26 @@ String.prototype.format = function () {
     }
     return a
 }
+
+let wait = true
+if (!process.env.ANTI_CAPTCH_API_KEY){
+
+    ioHook.start();
+
+    ioHook.registerShortcut([29, 42, 56], async (keys) => {
+        wait=false
+    });
+}
+
+const manualCaptcha = async (page) =>{
+    await manualCaptchaQueue.add(async () =>{
+        wait = true
+        await page.bringToFront()
+        while (wait){await sleep(500); await page.bringToFront()}
+        await sleep(1000)
+    })
+}
+
 
 const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
 
@@ -78,7 +102,18 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
                     page = await info.preFunc(browser, page)
                 }
 
-                if (info['capchaVersion'] == 'recapchaV2') {
+                if (!process.env.ANTI_CAPTCH_API_KEY){
+                    await clipboardy.write(nfCode)
+                    let input= await page.$(info.codeInputSelector)
+                    await input.focus()
+                    await page.keyboard.down('Control')
+                    await page.keyboard.press('V')
+                    await page.keyboard.up('Control')
+                    await manualCaptcha(page)
+                    await page.click(info.confirmSelector);
+                    await page.waitFor(delaySecs * 1000);
+                }
+                else if (info['capchaVersion'] == 'recapchaV2') {
                     let siteKey
 
                     if (info.siteKey) {
@@ -116,7 +151,7 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
                     await page.click(info.confirmSelector);
                     await page.waitFor(delaySecs * 1000);
                 }
-                if (info['capchaVersion'] == 'image') {
+                else if (info['capchaVersion'] == 'image') {
 
                     await clipboardy.write(nfCode)
                     let input= await page.$(info.codeInputSelector)
@@ -135,7 +170,7 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
                     await page.click(info.confirmSelector)
                     await page.waitFor(delaySecs * 1000);
                 }
-                if (info['capchaVersion'] == 'hiddenReCaptcha') {
+                else if (info['capchaVersion'] == 'hiddenReCaptcha') {
                     await page.waitFor(delaySecs * 1000);
                     await clipboardy.write(nfCode)
                     let input= await page.$(info.codeInputSelector)
