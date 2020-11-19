@@ -36,7 +36,7 @@ Na raíz do projeto, deve-se criar o container do banco de dados
 ```bash
 docker-compose up --no-start
 ```
-Após a criação basta inicializálo
+Após a criação basta inicializá-lo
 ```bash
 docker-compose start
 ```
@@ -52,39 +52,72 @@ docker-compose start
 ```bash
 ./nfDownloader donwload-doc-files \<JSON COM IDS DOS DOCUMENTOS\>
 ```
+O repositório possui um json de exemplo para o download de alguns documentos.
+```bash
+./nfDownloader donwload-doc-files ./inputs/example_docIds.json
+```
 
 #### Localizar chave das NFs nos documentos baixados, em formato PDF
 ```bash
 ./nfDownloader find-keys \<JSON COM IDS DOS DOCUMENTOS\>
 ```
-
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader find-keys ./inputs/example_pdfDocIds.json
+```
 O códgio tenta localizar o texto com a chave no PDF, caso isso não seja possível (porque o PDF é formado por imagens, por exemplo) o PDF será aberto. O usuário deverá, então, tirar um print screen da área em que o texto da chave se encontra, e apertar as teclas CTRL+SHIFT+ALT, para que o programa possa continuar rodando. O código usuará uma API da Google para extrair o texto da imagem e repetirá o processo para as próximas notas fiscais.
 
 ![](./docs/find_keys_pdf.gif)
 
 #### Verificação das chaves extraídas dos PDFs
+A extração da chave das NFs através de imagens pode conter erros. Para verificar e corrigir esses erros, é possível gerar um arquivo HTML, onde o usuário poderá conferir os dados extraídos. Para facilitar esse processo, o texto da chave fica vermelho quando o número de digitos ou o digito verificar não estiverem corretos. Ao final do processo o usuário pode baixar um arquivo json com os novos dados, para serem atualizados no banco de dados.
+
 ```bash
 ./nfDownloader gen-key-html \<JSON COM IDS DOS DOCUMENTOS\>
 ```
-
-A extração da chave das NFs através de imagens pode conter erros. Para verificar e corrigir esses erros, é possível gerar um arquivo HTML, onde o usuário poderá conferir os dados extraídos. Para facilitar esse processo, o texto da chave fica vermelho quando o número de digitos ou o digito verificar não estiverem corretos. Ao final do processo o usuário pode baixar um arquivo json com os novos dados, para serem atualizados no banco de dados.
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader gen-key-html ./inputs/example_pdfDocIds.json
+```
 
 ![](./docs/keys_html.gif)
+
+Após preencher os campos do HTML, deve-se baixar o arquivo json contendo os dados clicando em "submit", no fim do arquivo. Esse arquivo deverá ser usado como entrada na próxima etapa.
 
 #### Atualiza chave das notas fiscais no banco de dados, baseado em arquivo json
 ```bash
 ./nfDownloader process-key-data \<JSON COM IDS DOS DOCUMENTOS\>
 ```
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader process-key-data ./inputs/example_pdfDocIds_keys.json
+```
+
+#### Processa documentos ou notas fiscais (caso já tenham sido baixadas), baseado em arquivo json com lista de documentos relacionados
+```bash
+./nfDownloader process-docs \<JSON COM IDS DOS DOCUMENTOS\>
+```
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader process-docs ./inputs/example_pdfDocIds_keys.json
+```
+Deve-se processar os documentos para que a chave das nfs a serem baixadas seja extraída. Após a NFs for baixada, deve-se usar o mesmo comando, novamente, para que as informações da nota fiscal sejam obtidas.
 
 #### Baixa notas fiscais, baseado em arquivo json com lista de chaves
 ```bash
-./nfDownloader donwload-nf-list \<JSON COM CHAVE DAS NFs\>
+./nfDownloader donwload-nf-list \<JSON COM CHAVE DAS NFs\> -r -p\<Número de navegadores em paralelo\>
 ```
+A opção "-r" indica que arquivos existentes serão sobrescritos, e a opção "-p 10" indica que serão executadas 10 instâncias em paralelo para baixar os arquivos.
 
 #### Baixa notas fiscais, baseado em arquivo json com lista de documentos relacionados
 ```bash
 ./nfDownloader donwload-doc-list \<JSON COM IDS DOS DOCUMENTOS\>
 ```
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader donwload-doc-list ./inputs/example_docIds.json -r -p 10
+```
+A opção "-r" indica que arquivos existentes serão sobrescritos, e a opção "-p 10" indica que serão executadas 10 instâncias em paralelo para baixar os arquivos.
 
 #### Baixa cupons fiscais referenciados em NFs, baseado em arquivo json com lista de documentos relacionados
 ```bash
@@ -96,14 +129,9 @@ A extração da chave das NFs através de imagens pode conter erros. Para verifi
 ./nfDownloader process-nfs \<JSON COM CHAVE DAS NFs\>
 ```
 
-#### Processa notas fiscais, baseado em arquivo json com lista de documentos relacionados
-```bash
-./nfDownloader process-docs \<JSON COM IDS DOS DOCUMENTOS\>
-```
-
 #### Processa cupons fiscais referenciados em NFs, baseado em arquivo json com lista de documentos relacionados
 ```bash
-./nfDownloader process-docs\<JSON COM IDS DOS DOCUMENTOS\>
+./nfDownloader process-nfs-children\<JSON COM IDS DOS DOCUMENTOS\>
 ```
 
 #### Gera relatório, baseado em arquivo json com lista de documentos
