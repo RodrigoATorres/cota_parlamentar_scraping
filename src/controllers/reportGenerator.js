@@ -1,5 +1,6 @@
 require('dotenv').config()
 const dbObj = require('./dbConnection')
+const { exec } = require("child_process");
 
 const {getNfData} = require('./nfProcessor');
 const ufFromCode = require('../helpers/ufFromCode');
@@ -112,7 +113,12 @@ const analyzeData = (nfData, childData) =>{
 }
 
 const copyNfFiles = async (source, destination) => {
-  await copyFile(source, destination)
+  try{
+    await copyFile(source, destination)
+  }
+  catch (e){
+    console.log(e)
+  }
   let idx = 1
   while (fs.existsSync(source.replace('.html', `_frame${idx}.html`))) {
       await copyFile(source.replace('.html', `_frame${idx}.html`), destination.replace('.html', `_frame${idx}.html`))
@@ -132,15 +138,13 @@ const genNFeReport = async (nfeData, dbObj, reportName) => {
   markdown_str += `---\n`
   markdown_str += `---\n`
 
-  mkdir(`./HTML_reports/${reportName}/`)
-
   if (fs.existsSync(`./files/NFs&NFCs/${nfeData.dados.chave}.html`)){
-    await copyNfFiles(`./files/NFs&NFCs/${nfeData.dados.chave}.html`, `./HTML_reports/${reportName}/NFs/${nfeData.dados.chave}.html`)
+    await copyNfFiles(`./files/NFs&NFCs/${nfeData.dados.chave}.html`, `./files/HTML_reports/${reportName}/NFs/${nfeData.dados.chave}.html`)
     markdown_str += `# NF [${nfeData.dados.chave}](../NFs/${nfeData.dados.chave}.html) \n\n`
   }
   else if (fs.existsSync(`./files/documents/${nfeData.idDocumento}.html`)){
     let tmpHtml = fs.readFileSync(`./files/documents/${nfeData.idDocumento}.html`, 'utf8')
-    await writeFile(`./HTML_reports/${reportName}/NFs/${nfeData.dados.chave}.txt`, pretty(tmpHtml))
+    await writeFile(`./files/HTML_reports/${reportName}/NFs/${nfeData.dados.chave}.txt`, pretty(tmpHtml))
     markdown_str += `# NF [${nfeData.dados.chave}](../NFs/${nfeData.dados.chave}.txt) \n\n`
   }
   else{
@@ -183,7 +187,7 @@ const genNFeReport = async (nfeData, dbObj, reportName) => {
       }
 
       if (tmp_data.fileName && fs.existsSync(`./files/NFs&NFCs/${tmp_data.fileName}`)){
-        await copyNfFiles(`./files/NFs&NFCs/${tmp_data.fileName}`, `./HTML_reports/${reportName}/NFs/${nfc}.html`)  
+        await copyNfFiles(`./files/NFs&NFCs/${tmp_data.fileName}`, `./files/HTML_reports/${reportName}/NFs/${nfc}.html`)  
         refTable += `|${nfc_idx+1}|[${nfc}](../NFs/${nfc}.html)|${refTableKeys.map(el => tmp_data[el]?tmp_data[el]:'error').join('|')}|\n`
       }
       else{
@@ -244,7 +248,11 @@ const genNFeReport = async (nfeData, dbObj, reportName) => {
 
 
 
-module.exports.reportFromDocs = async(docIdList) => {
+module.exports.reportFromDocs = async(docIdList, reportName) => {
+
+    await mkdir(`./files/HTML_reports/${reportName}/`)
+    await mkdir(`./files/HTML_reports/${reportName}/Geral/`)
+    await mkdir(`./files/HTML_reports/${reportName}/NFs/`)
 
   let depData = {}
   let allData = []
@@ -257,7 +265,7 @@ module.exports.reportFromDocs = async(docIdList) => {
     }
     depData[row.nomeParlamentar].push(row)
     allData.push(row)
-    await genNFeReport(row, dbObj)
+    await genNFeReport(row, dbObj, reportName)
   }
 
   console.log(nfCodesError)
@@ -265,7 +273,7 @@ module.exports.reportFromDocs = async(docIdList) => {
 
   fs.writeFile(
 
-      'error_codes.json',
+      `./files/HTML_reports/${reportName}/error_codes.json`,
   
       JSON.stringify(nfCodesError.sort()),
   
@@ -284,21 +292,32 @@ module.exports.reportFromDocs = async(docIdList) => {
     }
   }
 
-  console.log(allData)
   allData.sort( (a,b) => b.score - a.score )
-  console.log(allData)
   let scoredOnly = allData.filter( el => (el.score && (el.score > 0)) )
   let scoreMd = scoredOnly.reduce( (prev, el) => prev + fs.readFileSync(`./files/mds/${el.chave}.md`), '')
-  await writeFile(`HTML_reports/${reportName}/Geral/Ranking.md`, scoreMd)
+  await writeFile(`files/HTML_reports/${reportName}/Geral/Ranking.md`, scoreMd)
 
   let invalidData = allData.filter( a => !a.isValid )
   invalidData = invalidData.filter( el => fs.existsSync(`./files/mds/${el.chave}.md`) )
 
   let invalidMd = invalidData.reduce( (prev, el) => prev + fs.readFileSync(`./files/mds/${el.chave}.md`), '')
-  await writeFile(`HTML_reports/${reportName}/Geral/Erros.md`, invalidMd)
+  await writeFile(`files/HTML_reports/${reportName}/Geral/Erros.md`, invalidMd)
 
   console.log(minExpense)
   console.log(maxExpense)
+
+
+  exec(`markdown-folder-to-html ./files/HTML_reports/${reportName}`, (error, stdout, stderr) => {
+    if (error) {
+        console.log(`error: ${error.message}`);
+        return;
+    }
+    if (stderr) {
+        console.log(`stderr: ${stderr}`);
+        return;
+    }
+    console.log(`stdout: ${stdout}`);
+  });
 
 }
 

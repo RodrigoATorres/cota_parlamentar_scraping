@@ -262,6 +262,6 @@ module.exports.paralalelDonwloadDocList = async (docIdList, nJobs, rewrite = fal
 
 module.exports.paralalelDonwloadDocChildren = async (docIdList, nJobs, rewrite = false) =>{
     let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
-    let nfList = res.reduce((prev,el) => prev.concat(el.dados.children), [])
+    let nfList = res.reduce((prev,el) => (el.dados && el.dados.children) ? prev.concat(el.dados.children) : prev, [])
     await this.paralalelDonwloadNfList(nfList, nJobs, rewrite = false)
 }

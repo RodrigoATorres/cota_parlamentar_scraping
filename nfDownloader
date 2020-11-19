@@ -10,7 +10,7 @@ const processKeyData = require('./src/controllers/processKeyData')
 const {paralalelDonwloadNfList, paralalelDonwloadDocList, paralalelDonwloadDocChildren} = require('./src/controllers/nfDonwloader')
 const {getNfDataFromDocFiles, getNfDataFromDocIds, getChildrenNfDataFromDocIds} = require('./src/controllers/nfProcessor')
 const {reportFromDocs, noChildReport} = require('./src/controllers/reportGenerator')
-const json2Db = require('./src/controllers/json2Db')
+const {importExpenses, importSecretaries} = require('./src/controllers/json2Db')
 const downloadDocFiles = require('./src/controllers/downloadDocFiles')
 
 program
@@ -134,7 +134,9 @@ program
     for (const inputFile of cmd.args){
       docIdsList = docIdsList.concat(JSON.parse(fs.readFileSync(inputFile)))
     }
-    reportFromDocs(docIdsList).then(res => console.log(res))
+    let now = new Date()
+    let reportName = `${now.getYear()}${now.getMonth()}${now.getDay()}_${now.getHours()}${now.getMinutes()}`
+    reportFromDocs(docIdsList, reportName).then(res => console.log(res))
   })
 
 program
@@ -144,10 +146,18 @@ program
   })
 
 program
-  .command('json-to-db')
+  .command('import-expenses')
   .action( (cmd) =>{
     for (const inputFile of cmd.args){
-      json2Db(inputFile).then(res => console.log(res))
+      importExpenses(inputFile).then(res => console.log(res))
+    }
+  })
+
+program
+  .command('import-secretaries')
+  .action( (cmd) =>{
+    for (const inputFile of cmd.args){
+      importSecretaries(inputFile).then(res => console.log(res))
     }
   })
 

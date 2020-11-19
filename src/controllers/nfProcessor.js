@@ -123,7 +123,7 @@ module.exports.getChildrenNfDataFromDocIds = async (docIdList, nfFolder = './fil
 
     for (let docObj of res){
 
-        if (docObj.dados.children){
+        if (docObj.dados && docObj.dados.children){
             const files = docObj.dados.children.map(el => path.join(nfFolder, el) + '.html')
             const childrenData = []
     
@@ -132,7 +132,8 @@ module.exports.getChildrenNfDataFromDocIds = async (docIdList, nfFolder = './fil
                 try{
                     data = await getNfData(file)
                 }
-                catch{
+                catch (e){
+                    console.log(e)
                     data = {}
                 }
         
@@ -145,7 +146,7 @@ module.exports.getChildrenNfDataFromDocIds = async (docIdList, nfFolder = './fil
             await dbObj.collection('despesas').updateOne({idDocumento:docObj.idDocumento}, {$set:{childrenData}})
         }
         else{
-            error_keys.push(docObj.dados.chave[0])
+            error_keys.push(docObj.chave)
         }
 
 
