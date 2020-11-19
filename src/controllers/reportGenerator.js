@@ -8,6 +8,7 @@ const util = require('util');
 
 const writeFile = util.promisify(fs.writeFile);
 const copyFile = util.promisify(fs.copyFile);
+const mkdir = util.promisify(fs.mkdir);
 
 const pretty = require('pretty');
 const { prependOnceListener } = require('process');
@@ -110,8 +111,16 @@ const analyzeData = (nfData, childData) =>{
 
 }
 
+const copyNfFiles = async (source, destination) => {
+  await copyFile(source, destination)
+  let idx = 1
+  while (fs.existsSync(source.replace('.html', `_frame${idx}.html`))) {
+      await copyFile(source.replace('.html', `_frame${idx}.html`), destination.replace('.html', `_frame${idx}.html`))
+  }
+}
 
-const genNFeReport = async (nfeData, dbObj) => {
+
+const genNFeReport = async (nfeData, dbObj, reportName) => {
 
   if(!nfeData.dados || !nfeData.dados.children){
     noData.push()
@@ -123,13 +132,15 @@ const genNFeReport = async (nfeData, dbObj) => {
   markdown_str += `---\n`
   markdown_str += `---\n`
 
-  if (fs.existsSync(`./unprocessedNFs/${nfeData.dados.chave}.html`)){
-    await copyFile(`./unprocessedNFs/${nfeData.dados.chave}.html`, `./HTML_reports/NFs/${nfeData.dados.chave}.html`)  
+  mkdir(`./HTML_reports/${reportName}/`)
+
+  if (fs.existsSync(`./files/NFs&NFCs/${nfeData.dados.chave}.html`)){
+    await copyNfFiles(`./files/NFs&NFCs/${nfeData.dados.chave}.html`, `./HTML_reports/${reportName}/NFs/${nfeData.dados.chave}.html`)
     markdown_str += `# NF [${nfeData.dados.chave}](../NFs/${nfeData.dados.chave}.html) \n\n`
   }
-  else if (fs.existsSync(`./unprocessedDocuments/${nfeData.idDocumento}.html`)){
-    let tmpHtml = fs.readFileSync(`./unprocessedDocuments/${nfeData.idDocumento}.html`, 'utf8')
-    await writeFile(`./HTML_reports/NFs/${nfeData.dados.chave}.txt`, pretty(tmpHtml))
+  else if (fs.existsSync(`./files/documents/${nfeData.idDocumento}.html`)){
+    let tmpHtml = fs.readFileSync(`./files/documents/${nfeData.idDocumento}.html`, 'utf8')
+    await writeFile(`./HTML_reports/${reportName}/NFs/${nfeData.dados.chave}.txt`, pretty(tmpHtml))
     markdown_str += `# NF [${nfeData.dados.chave}](../NFs/${nfeData.dados.chave}.txt) \n\n`
   }
   else{
@@ -156,8 +167,8 @@ const genNFeReport = async (nfeData, dbObj) => {
   let sumCheck = 0
   let childData =[]
   for (const [nfc_idx, nfc] of nfeData.dados.children.entries()){
-    if (fs.existsSync(`./unprocessedNFs/${nfc}.html`)){
-      let tmp_data =  await getNfData(`./unprocessedNFs/${nfc}.html`)
+    if (fs.existsSync(`./files/NFs&NFCs/${nfc}.html`)){
+      let tmp_data =  await getNfData(`./files/NFs&NFCs/${nfc}.html`)
       objStr2Num(tmp_data)
       tmp_data.possibleSecretaries = (await getSimilarSecretary(nfeData.nomeParlamentar, tmp_data.customer_name, dbObj)).join('; ')
       if (tmp_data.items_total_value){
@@ -171,8 +182,8 @@ const genNFeReport = async (nfeData, dbObj) => {
         sumCheck += tmp_data.total[0] ? tmp_data.total[0] : 0 
       }
 
-      if (tmp_data.fileName && fs.existsSync(`./unprocessedNFs/${tmp_data.fileName}`)){
-        await copyFile(`./unprocessedNFs/${tmp_data.fileName}`, `./HTML_reports/NFs/${nfc}.html`)  
+      if (tmp_data.fileName && fs.existsSync(`./files/NFs&NFCs/${tmp_data.fileName}`)){
+        await copyNfFiles(`./files/NFs&NFCs/${tmp_data.fileName}`, `./HTML_reports/${reportName}/NFs/${nfc}.html`)  
         refTable += `|${nfc_idx+1}|[${nfc}](../NFs/${nfc}.html)|${refTableKeys.map(el => tmp_data[el]?tmp_data[el]:'error').join('|')}|\n`
       }
       else{
@@ -227,8 +238,8 @@ const genNFeReport = async (nfeData, dbObj) => {
   markdown_str += `</details>`
   markdown_str += `---\n`
   markdown_str += `---\n`
-  all_md.push(`./mds/${nfeData.dados.chave}.md`)
-  await writeFile(`./mds/${nfeData.dados.chave}.md`, markdown_str)
+  all_md.push(`./files/mds/${nfeData.dados.chave}.md`)
+  await writeFile(`./files/mds/${nfeData.dados.chave}.md`, markdown_str)
 }
 
 
@@ -267,7 +278,7 @@ module.exports.reportFromDocs = async(docIdList) => {
 
   for (tmp_code of nfCodesError){
     try{
-      await copyFile(`./unprocessedNFs/${tmp_code}.png`, `./error_nfs/${tmp_code}.png`)
+      await copyFile(`./files/NFs&NFCs/${tmp_code}.png`, `./error_nfs/${tmp_code}.png`)
     }
     catch{
     }
@@ -277,14 +288,14 @@ module.exports.reportFromDocs = async(docIdList) => {
   allData.sort( (a,b) => b.score - a.score )
   console.log(allData)
   let scoredOnly = allData.filter( el => (el.score && (el.score > 0)) )
-  let scoreMd = scoredOnly.reduce( (prev, el) => prev + fs.readFileSync(`./mds/${el.chave}.md`), '')
-  await writeFile(`HTML_reports/Geral/Ranking.md`, scoreMd)
+  let scoreMd = scoredOnly.reduce( (prev, el) => prev + fs.readFileSync(`./files/mds/${el.chave}.md`), '')
+  await writeFile(`HTML_reports/${reportName}/Geral/Ranking.md`, scoreMd)
 
   let invalidData = allData.filter( a => !a.isValid )
-  invalidData = invalidData.filter( el => fs.existsSync(`./mds/${el.chave}.md`) )
+  invalidData = invalidData.filter( el => fs.existsSync(`./files/mds/${el.chave}.md`) )
 
-  let invalidMd = invalidData.reduce( (prev, el) => prev + fs.readFileSync(`./mds/${el.chave}.md`), '')
-  await writeFile(`HTML_reports/Geral/Erros.md`, invalidMd)
+  let invalidMd = invalidData.reduce( (prev, el) => prev + fs.readFileSync(`./files/mds/${el.chave}.md`), '')
+  await writeFile(`HTML_reports/${reportName}/Geral/Erros.md`, invalidMd)
 
   console.log(minExpense)
   console.log(maxExpense)

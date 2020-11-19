@@ -97,19 +97,19 @@ module.exports = async (docIdsList) =>{
 
         let pdfPath = res.urlDocumento
 
-        await downloadPDF(res.urlDocumento, `./nfPdfs/${res.idDocumento}.pdf`);
+        await downloadPDF(res.urlDocumento, `./files/nfPdfs/${res.idDocumento}.pdf`);
 
         let info = {}
-        info.keysFromText = await(getKeyFromPDF(`./nfPdfs/${res.idDocumento}.pdf`))
+        info.keysFromText = await(getKeyFromPDF(`./files/nfPdfs/${res.idDocumento}.pdf`))
 
         if (info.keysFromText.length == 0){
             page.goto(pdfPath)
             while (wait){await sleep(200)}
             wait = true
-            await rename(`./tmp.png`, `./unprocessedKeyImages/${res.idDocumento}.png`)
+            await rename(`./tmp.png`, `./files/keyImages/${res.idDocumento}.png`)
             await sleep(200)
-            info.keyImage = `./unprocessedKeyImages/${res.idDocumento}.png`
-            info.keyFromOcr = await getImageText(`./unprocessedKeyImages/${res.idDocumento}.png`)
+            info.keyImage = `./files/keyImages/${res.idDocumento}.png`
+            info.keyFromOcr = await getImageText(`./files/keyImages/${res.idDocumento}.png`)
         }
 
         await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})

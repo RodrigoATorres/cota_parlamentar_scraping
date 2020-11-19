@@ -51,7 +51,7 @@ const getNfData = async (fPath) =>{
 module.exports.getNfData = getNfData;
 
 
-module.exports.getNfDataFromDocFiles = async (docIdList, nfFolder = './unprocessedDocuments/') => {
+module.exports.getNfDataFromDocFiles = async (docIdList, nfFolder = './files/documents/') => {
 
     const noChild = []
     const files = docIdList.map( el => path.join(nfFolder, String(el)) + '.html')
@@ -79,20 +79,12 @@ module.exports.getNfDataFromDocFiles = async (docIdList, nfFolder = './unprocess
         if (data.chave){
             await dbObj.collection('despesas').updateOne({idDocumento:docIdList[i]}, {$set:{chave:data.chave[0]}})
             await dbObj.collection('despesas').updateOne({idDocumento:docIdList[i]}, {$set:{dados:data}})
-            await copyFile(file, `./HTML_reports/NFs/${data.chave}.html`)
-            let idx = 1
-            while (fs.existsSync(file.replace('.html', `_frame${idx}.html`))) {
-                await copyFile(file.replace('.html', `_frame${idx}.html`), `./HTML_reports/NFs/${data.chave}_frame${idx}.html`)
-                console.log(file.replace('.html', `_frame${idx}.html`), `./HTML_reports/NFs/${data.chave}_frame${idx}.html`)
-                idx+=1;
-            }
-
         }
     }
 }
 
 
-module.exports.getNfDataFromDocIds = async (docIdList, nfFolder = './unprocessedNFs/') => {
+module.exports.getNfDataFromDocIds = async (docIdList, nfFolder = './files/NFs&NFCs/') => {
 
     let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
     let nfList = res.reduce((prev,el) => el.chave? prev.concat([el.chave]): prev, [])
@@ -124,7 +116,7 @@ module.exports.getNfDataFromDocIds = async (docIdList, nfFolder = './unprocessed
     }
 }
 
-module.exports.getChildrenNfDataFromDocIds = async (docIdList, nfFolder = './unprocessedNFs/') => {
+module.exports.getChildrenNfDataFromDocIds = async (docIdList, nfFolder = './files/NFs&NFCs/') => {
 
     let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
     const error_keys = []

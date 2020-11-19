@@ -9,12 +9,12 @@ module.exports = async (docIdList, savePath) =>{
     let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
 
     for (let el of res){
-        if ( fs.existsSync(`./unprocessedKeyImages/${el.idDocumento}.png`)){
-            html+=`<a href="./nfPdfs/${el.idDocumento}.pdf">${el.idDocumento}</a>`
+        if ( fs.existsSync(`./files/keyImages/${el.idDocumento}.png`)){
+            html+=`<a href="../nfPdfs/${el.idDocumento}.pdf">${el.idDocumento}</a>`
             html+='<div>'
             html+=`<input name="${el.idDocumento}" type="text" value="${el.infoChave.keyFromOcr}" style='font-size: 35px;' maxlength="80" size="44" data-inputmask="'mask': '99-9999-99.999.999/9999-99-99-999-999.999.999-999.999.999-9'" />`
             html+='</div>'
-            html+=`<img src="../unprocessedKeyImages/${el.idDocumento}.png" alt="HTML5 Icon" width="1024">`
+            html+=`<img src="../keyImages/${el.idDocumento}.png" alt="HTML5 Icon" width="1024">`
             html+=`<br><br><br>`
         }
     }

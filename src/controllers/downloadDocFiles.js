@@ -27,11 +27,11 @@ module.exports = async (docIdList) =>{
         
                 let html = await page.content();
                 html += `\n<span id='currentUrl'>${page.url()}</span>`
-                fs.writeFileSync(`unprocessedDocuments/${res.idDocumento}.html`, html);
+                fs.writeFileSync(`files/documents/${res.idDocumento}.html`, html);
         
                 for (const [idx, frame] of page.mainFrame().childFrames().entries()){
                   let html = await frame.content();
-                  fs.writeFileSync(`unprocessedDocuments/${res.idDocumento}_frame${idx+1}.html`, html);
+                  fs.writeFileSync(`files/documents/${res.idDocumento}_frame${idx+1}.html`, html);
                 }
               }
               catch{

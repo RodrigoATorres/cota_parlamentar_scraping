@@ -51,7 +51,7 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
     const context = await browser.createIncognitoBrowserContext();
     let page = await context.newPage();
     // let page = await browser.newPage();
-    await page._client.send('Page.setDownloadBehavior', {behavior: 'allow', downloadPath: `unprocessedNFs/${nfCode}`})
+    await page._client.send('Page.setDownloadBehavior', {behavior: 'allow', downloadPath: `files/NFs&NFCs/${nfCode}`})
 
     await page.setRequestInterception(true);
 
@@ -163,12 +163,12 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
                 await page.waitFor(delaySecs * 1000);
                 let html = await page.content();
                 html += `\n<span id='currentUrl'>${page.url()}</span>`
-                fs.writeFileSync(`./unprocessedNFs/${nfCode}.html`, html);
-                await page.screenshot({path: `./unprocessedNFs/${nfCode}.png`});
+                fs.writeFileSync(`./files/NFs&NFCs/${nfCode}.html`, html);
+                await page.screenshot({path: `./files/NFs&NFCs/${nfCode}.png`});
 
                 for (const [idx, frame] of page.mainFrame().childFrames().entries()){
                     let html = await frame.content();
-                    fs.writeFileSync(`./unprocessedNFs/${nfCode}_frame${idx+1}.html`, html);
+                    fs.writeFileSync(`./files/NFs&NFCs/${nfCode}_frame${idx+1}.html`, html);
                 }
 
                 break infoLoop;
@@ -201,8 +201,8 @@ module.exports.paralalelDonwloadNfList = async (nfList, nJobs, rewrite = false) 
     console.log(nfList)
     nfList = [... new Set(nfList)]
     if (!rewrite){
-        nfList = nfList.filter(x => !fs.existsSync(`./unprocessedNFs/${x}.html`))
-        // console.log(`./unprocessedNFs/${x}.html`)
+        nfList = nfList.filter(x => !fs.existsSync(`./files/NFs&NFCs/${x}.html`))
+        // console.log(`./files/NFs&NFCs/${x}.html`)
     }
     console.log(nfList)
 
