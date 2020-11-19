@@ -22,7 +22,6 @@ const getNfData = async (fPath) =>{
         list_$.push(cheerio.load(html, { decodeEntities: false }));
         idx+=1;
     }
-
     let url = list_$[0]('#currentUrl').text()
     let domain = url.match(/^(?:https?:\/\/)?(?:[^@\n]+@)?(?:www\.)?([^:\/\n?]+)/img)[0];
     domain = domain.replace('//www.','//')

@@ -13,6 +13,8 @@ const manualCaptchaQueue = new PQueue({concurrency: 1});
 
 const ufFromCode = require('../helpers/ufFromCode');
 const nfGetInfo = require('../nfGetInfo');
+const {getNfData} = require('./nfProcessor')
+
 
 function sleep(ms) {
     return new Promise((resolve) => {
@@ -91,6 +93,13 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
     infoLoop:
     for (let info of getInfo) {
         for (let i = 0; i < info.nTries; i++) {
+
+            let data = await getNfData(`./files/NFs&NFCs/${nfCode}.html`)
+            if (data.chave){
+                console.log(`Essa chave já tem dados ${nfCode}`)
+                break infoLoop
+            }
+
             try {
                 let url = info.url.format(nfCode)
                 await page.goto(url, {
@@ -206,7 +215,6 @@ const downloadNF = async (nfCode, browser = null, delaySecs = 2) => {
                     fs.writeFileSync(`./files/NFs&NFCs/${nfCode}_frame${idx+1}.html`, html);
                 }
 
-                break infoLoop;
             }
             catch {
                 console.log('error', nfCode)
@@ -235,6 +243,7 @@ const downloadNfList = async(nfList) =>{
 module.exports.paralalelDonwloadNfList = async (nfList, nJobs, rewrite = false) =>{
     console.log(nfList)
     nfList = [... new Set(nfList)]
+    console.log(rewrite)
     if (!rewrite){
         nfList = nfList.filter(x => !fs.existsSync(`./files/NFs&NFCs/${x}.html`))
         // console.log(`./files/NFs&NFCs/${x}.html`)
@@ -257,11 +266,11 @@ module.exports.paralalelDonwloadDocList = async (docIdList, nJobs, rewrite = fal
     let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
     let nfList = []
     res.forEach(el => el.chave? nfList.push(el.chave): console.log(el))
-    await this.paralalelDonwloadNfList(nfList, nJobs, rewrite = false)
+    await this.paralalelDonwloadNfList(nfList, nJobs, rewrite)
 }
 
 module.exports.paralalelDonwloadDocChildren = async (docIdList, nJobs, rewrite = false) =>{
     let res = await dbObj.collection('despesas').find({idDocumento: { $in: docIdList }}).toArray()
     let nfList = res.reduce((prev,el) => (el.dados && el.dados.children) ? prev.concat(el.dados.children) : prev, [])
-    await this.paralalelDonwloadNfList(nfList, nJobs, rewrite = false)
+    await this.paralalelDonwloadNfList(nfList, nJobs, rewrite)
 }
