@@ -1,12 +1,12 @@
 const dbObj = require('./dbConnection')
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const http = require('http');
+const request = require("request-promise-native");
 
-const donwloadFile = async(filePath, url) =>{
-    const file = fs.createWriteStream(filePath);
-    const response = await  http.get(url)
-    await response.pipe(file);
+async function downloadPDF(pdfURL, outputFilename) {
+  let pdfBuffer = await request.get({uri: pdfURL, encoding: null});
+  console.log("Writing downloaded PDF file to " + outputFilename + "...");
+  fs.writeFileSync(outputFilename, pdfBuffer);
 }
 
 module.exports = async (docIdList) =>{
@@ -38,6 +38,16 @@ module.exports = async (docIdList) =>{
                 console.log('error')
               }
         }
+      else{
+        try{
+          await downloadPDF(res.urlDocumento, `./files/nfPdfs/${res.idDocumento}.pdf`);
+        }
+        catch (e){
+          console.log(e)
+        }
+      }
     }
+
+    await browser.close();
 
 }

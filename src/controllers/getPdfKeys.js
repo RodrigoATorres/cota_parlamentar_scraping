@@ -95,12 +95,10 @@ module.exports = async (docIdsList) =>{
             continue
         }
 
-        let pdfPath = res.urlDocumento
-
-        await downloadPDF(res.urlDocumento, `./files/nfPdfs/${res.idDocumento}.pdf`);
+        let pdfPath = `./files/nfPdfs/${res.idDocumento}.pdf`
 
         let info = {}
-        info.keysFromText = await(getKeyFromPDF(`./files/nfPdfs/${res.idDocumento}.pdf`))
+        info.keysFromText = await(getKeyFromPDF(pdfPath))
 
         if (info.keysFromText.length == 0){
             page.goto(pdfPath)
