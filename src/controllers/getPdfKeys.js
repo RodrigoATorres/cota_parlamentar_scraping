@@ -101,13 +101,19 @@ module.exports = async (docIdsList) =>{
         info.keysFromText = await(getKeyFromPDF(pdfPath))
 
         if (info.keysFromText.length == 0){
-            page.goto(pdfPath)
+            page.goto(`file://${process.cwd()}/${pdfPath}`)
             while (wait){await sleep(200)}
             wait = true
             await rename(`./tmp.png`, `./files/keyImages/${res.idDocumento}.png`)
             await sleep(200)
             info.keyImage = `./files/keyImages/${res.idDocumento}.png`
-            info.keyFromOcr = await getImageText(`./files/keyImages/${res.idDocumento}.png`)
+
+            if (process.env.GOOGLE_APPLICATION_CREDENTIALS){
+                info.keyFromOcr = await getImageText(`./files/keyImages/${res.idDocumento}.png`)
+            }
+            else{
+                info.keyFromOcr = ''
+            }
         }
 
         await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})
