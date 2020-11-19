@@ -115,8 +115,11 @@ module.exports = async (docIdsList) =>{
                 info.keyFromOcr = ''
             }
         }
+        else{
+            await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{chave:info.keysFromText}})
+        }
 
-        await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})
+        // await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})
         allInfo.push(info)
     }
 
