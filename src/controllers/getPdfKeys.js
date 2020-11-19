@@ -116,10 +116,10 @@ module.exports = async (docIdsList) =>{
             }
         }
         else{
-            await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{chave:info.keysFromText}})
+            await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{chave:info.keysFromText[0]}})
         }
 
-        // await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})
+        await dbObj.collection('despesas').updateOne({idDocumento:res.idDocumento}, {$set:{infoChave:info}})
         allInfo.push(info)
     }
 
