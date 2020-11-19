@@ -29,5 +29,6 @@ const cod_UFs = [
 ]
 
 module.exports = (nfe_code) => {
-    return cod_UFs.find(el => el[0] == nfe_code.slice(0, 2))[2]
+    let info = cod_UFs.find(el => el[0] == nfe_code.slice(0, 2))
+    return info ? info[2] : 'XX'
 }
