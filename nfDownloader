@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const path = require('path');
 const { program } = require('commander');
 
 const getPdfKeys = require('./src/controllers/getPdfKeys')
@@ -42,7 +43,8 @@ program
     }
 
     if (!cmd.output){
-      cmd.output = cmd.args[0].replace(/\.[^/.]+$/, "") + '.html'
+      let basename = path.basename(cmd.args[0]);
+      cmd.output = path.join('./files/keyImagesHtmls',basename.replace(/\.[^/.]+$/, "") + '.html')
     }
     genImageKeysHtml(docIdsList, cmd.output).then(res => console.log(res))
 
