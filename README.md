@@ -118,6 +118,8 @@ Deve-se processar os documentos para que a chave das nfs a serem baixadas seja e
 ./nfDownloader donwload-nf-list \<JSON COM CHAVE DAS NFs\> -r -p\<Número de navegadores em paralelo\>
 ```
 A opção "-r" indica que arquivos existentes serão sobrescritos, e a opção "-p 10" indica que serão executadas 10 instâncias em paralelo para baixar os arquivos.
+Quando não há uma chave para o API do anticaptcha disponível, o usuário poderá resolver os captchas manualmente. Após resolver cada captcha, basta pressionar CTRL+ALT+SHIFT para que o programa continue a rodar.
+A resolução manual pode ser utilizada com várias instancias em paralelo, as páginas com captchas para resolver serão trazidas para frente, uma por vez.
 
 #### Baixa notas fiscais, baseado em arquivo json com lista de documentos relacionados
 ```bash
