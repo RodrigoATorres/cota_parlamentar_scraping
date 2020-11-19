@@ -41,9 +41,19 @@ Após a criação basta inicializá-lo
 docker-compose start
 ```
 
+### Instalando markdown-folder-to-html para conversão de relatórios para HTML
+```bash
+npm install -g markdown-folder-to-html
+```
+
 ### Inserindo dados das cotas parlamentares (obtidos do [site da câmara](https://dadosabertos.camara.leg.br/swagger/api.html#staticfile)) no bando de dados
 ```bash
-./nfDownloader json-to-db \<ARQUIVO JSON\>
+./nfDownloader import-expenses \<ARQUIVO JSON\>
+```
+
+### Inserindo dados dos sercretários dos parlamentares no banco de dados
+```bash
+./nfDownloader import-secretaries ./inputs/dbJson/Secretarios.json
 ```
 
 ## Utilização
@@ -93,21 +103,23 @@ Pode-se utilizar o json de exemplo:
 ./nfDownloader process-key-data ./inputs/example_pdfDocIds_keys.json
 ```
 
-#### Processa documentos ou notas fiscais (caso já tenham sido baixadas), baseado em arquivo json com lista de documentos relacionados
+#### Processa documentos, baseado em arquivo json com lista de documentos relacionados
 ```bash
 ./nfDownloader process-docs \<JSON COM IDS DOS DOCUMENTOS\>
 ```
 Pode-se utilizar o json de exemplo:
 ```bash
-./nfDownloader process-docs ./inputs/example_pdfDocIds_keys.json
+./nfDownloader process-docs ./inputs/example_docIds.json
 ```
-Deve-se processar os documentos para que a chave das nfs a serem baixadas seja extraída. Após a NFs for baixada, deve-se usar o mesmo comando, novamente, para que as informações da nota fiscal sejam obtidas.
+Deve-se processar os documentos para que a chave das nfs a serem baixadas seja extraída.
 
 #### Baixa notas fiscais, baseado em arquivo json com lista de chaves
 ```bash
 ./nfDownloader donwload-nf-list \<JSON COM CHAVE DAS NFs\> -r -p\<Número de navegadores em paralelo\>
 ```
 A opção "-r" indica que arquivos existentes serão sobrescritos, e a opção "-p 10" indica que serão executadas 10 instâncias em paralelo para baixar os arquivos.
+Quando não há uma chave para o API do anticaptcha disponível, o usuário poderá resolver os captchas manualmente. Após resolver cada captcha, basta pressionar CTRL+ALT+SHIFT para que o programa continue a rodar.
+A resolução manual pode ser utilizada com várias instancias em paralelo, as páginas com captchas para resolver serão trazidas para frente, uma por vez.
 
 #### Baixa notas fiscais, baseado em arquivo json com lista de documentos relacionados
 ```bash
@@ -119,22 +131,39 @@ Pode-se utilizar o json de exemplo:
 ```
 A opção "-r" indica que arquivos existentes serão sobrescritos, e a opção "-p 10" indica que serão executadas 10 instâncias em paralelo para baixar os arquivos.
 
+
+#### Processa notas fiscais, baseado em arquivo json com lista de documentos relacionados
+```bash
+./nfDownloader process-nfs \<JSON COM IDS DOS DOCUMENTOS\>
+```
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader process-nfs ./inputs/example_docIds.json
+```
+
 #### Baixa cupons fiscais referenciados em NFs, baseado em arquivo json com lista de documentos relacionados
 ```bash
 ./nfDownloader donwload-doc-children \<JSON COM IDS DOS DOCUMENTOS\>
 ```
-
-#### Processa notas fiscais, baseado em arquivo json com lista de chaves
+Pode-se utilizar o json de exemplo:
 ```bash
-./nfDownloader process-nfs \<JSON COM CHAVE DAS NFs\>
+./nfDownloader donwload-doc-children ./inputs/example_docIds.json -p 10
 ```
 
 #### Processa cupons fiscais referenciados em NFs, baseado em arquivo json com lista de documentos relacionados
 ```bash
-./nfDownloader process-nfs-children\<JSON COM IDS DOS DOCUMENTOS\>
+./nfDownloader process-nfs-children \<JSON COM IDS DOS DOCUMENTOS\>
+```
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader process-nfs-children ./inputs/example_docIds.json
 ```
 
 #### Gera relatório, baseado em arquivo json com lista de documentos
 ```bash
-./nfDownloader generate-report\<JSON COM IDS DOS DOCUMENTOS\>
+./nfDownloader generate-report \<JSON COM IDS DOS DOCUMENTOS\>
+```
+Pode-se utilizar o json de exemplo:
+```bash
+./nfDownloader generate-report ./inputs/example_docIds.json
 ```
